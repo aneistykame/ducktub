@@ -1,32 +1,17 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+    <q-btn
+      v-if="!isLarge && !drawer"
+      class="menu-btn"
+      flat
+      round
+      icon="menu"
+      @click="drawer = true"
+    />
 
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>
-    </q-header>
-
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.label"
-          v-bind="link"
-        />
-      </q-list>
+    <q-drawer v-model="drawer" :behavior="isSmall ? 'mobile' : 'desktop'" :width="drawerWidth">
+      <q-btn v-if="!isLarge" class="close-btn" flat round icon="close" @click="drawer = false" />
+      <SidebarPanel />
     </q-drawer>
 
     <q-page-container>
@@ -36,57 +21,42 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import EssentialLink from '@/components/EssentialLink.vue'
+import { ref, computed, watch } from 'vue'
+import { useQuasar } from 'quasar'
+import SidebarPanel from '../components/SidebarPanel.vue'
 
-const linksList = [
-  {
-    label: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    label: 'GitHub',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    label: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    label: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    label: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    label: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    label: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
+const $q = useQuasar()
 
-const leftDrawerOpen = ref(false)
+const isSmall = computed(() => $q.screen.width < 600)
+const isLarge = computed(() => $q.screen.width >= 1124)
 
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
+const drawerWidth = computed(() => {
+  if (isSmall.value) return Math.min(330, $q.screen.width * 0.85)
+  if ($q.screen.width < 1550) return 270
+  return 330
+})
+
+const drawer = ref(!isSmall.value)
+
+watch(isSmall, (small) => {
+  if (small) drawer.value = false
+})
+watch(isLarge, (large) => {
+  if (large) drawer.value = true
+})
 </script>
+
+<style lang="scss" scoped>
+.menu-btn {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+}
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+</style>

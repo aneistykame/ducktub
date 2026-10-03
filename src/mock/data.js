@@ -1,5 +1,5 @@
 export const users = [
-  { id: 1, firstName: 'Mia', lastName: 'Kovar', nickName: 'quackmia', email: 'mia@example.com', status: 'online' },
+  { id: 1, firstName: 'Mia', lastName: 'Kovar', nickName: 'pip', email: 'mia@example.com', status: 'online' },
   { id: 2, firstName: 'Ed', lastName: 'Novak', nickName: 'ed', email: 'ed@example.com', status: 'online' },
   { id: 3, firstName: 'Jana', lastName: 'Klinth', nickName: 'jana', email: 'jana@example.com', status: 'online' },
   { id: 4, firstName: 'Tom', lastName: 'Varga', nickName: 'tom', email: 'tom@example.com', status: 'dnd' },
@@ -19,19 +19,19 @@ export const messages = [
   { id: 1, channelId: 1, authorId: 3, text: 'Morning, everyone! Anyone up for a swim later?', time: '09:12', mentions: [] },
   { id: 2, channelId: 1, authorId: 2, text: 'Count me in, as long as the water is warm.', time: '09:14', mentions: [] },
   { id: 3, channelId: 1, authorId: 4, text: 'I just fed the ducks by the bridge. They were very loud.', time: '09:20', mentions: [] },
-  { id: 4, channelId: 1, authorId: 3, text: '@quackmia did you finish the slides for Friday?', time: '09:31', mentions: ['quackmia'] },
+  { id: 4, channelId: 1, authorId: 3, text: '@pip did you finish the slides for Friday?', time: '09:31', mentions: ['pip'] },
   { id: 5, channelId: 1, authorId: 1, text: 'Almost! I only need to add the screenshots.', time: '09:35', mentions: [] },
   { id: 6, channelId: 1, authorId: 2, text: 'Quick reminder: the meeting moved to 3 pm.', time: '10:02', mentions: [] },
   { id: 7, channelId: 1, authorId: 5, text: 'Thanks Ed, I would have missed that.', time: '10:05', mentions: [] },
   { id: 8, channelId: 1, authorId: 4, text: '@lea can you bring the laptop charger?', time: '10:11', mentions: ['lea'] },
   { id: 9, channelId: 1, authorId: 5, text: 'Sure thing, I will pack it tonight.', time: '10:14', mentions: [] },
   { id: 10, channelId: 1, authorId: 1, text: 'Lunch at noon? I found a place with great soup.', time: '11:40', mentions: [] },
-  { id: 11, channelId: 1, authorId: 3, text: 'Yes please! @quackmia send me the address.', time: '11:42', mentions: ['quackmia'] },
+  { id: 11, channelId: 1, authorId: 3, text: 'Yes please! @pip send me the address.', time: '11:42', mentions: ['pip'] },
   { id: 12, channelId: 1, authorId: 1, text: 'On it. It is five minutes from the station.', time: '11:44', mentions: [] },
 
   // kitchen
   { id: 13, channelId: 2, authorId: 2, text: 'Who is cooking tonight?', time: '14:02', mentions: [] },
-  { id: 14, channelId: 2, authorId: 3, text: '@quackmia it is your turn, a promise is a promise!', time: '14:03', mentions: ['quackmia'] },
+  { id: 14, channelId: 2, authorId: 3, text: '@pip it is your turn, a promise is a promise!', time: '14:03', mentions: ['pip'] },
   { id: 15, channelId: 2, authorId: 1, text: 'Fine, fine. Pasta it is.', time: '14:05', mentions: [] },
 
   // school
