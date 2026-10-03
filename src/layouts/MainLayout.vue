@@ -31,9 +31,9 @@ const isSmall = computed(() => $q.screen.width < 600)
 const isLarge = computed(() => $q.screen.width >= 1124)
 
 const drawerWidth = computed(() => {
-  if (isSmall.value) return Math.min(330, $q.screen.width * 0.85)
-  if ($q.screen.width < 1550) return 270
-  return 330
+  if (isSmall.value) return Math.min(350, $q.screen.width * 0.85)
+  if ($q.screen.width < 1550) return 300
+  return 350
 })
 
 const drawer = ref(!isSmall.value)
@@ -59,4 +59,10 @@ watch(isLarge, (large) => {
   right: 8px;
   z-index: 1;
 }
+
+:deep(.q-drawer--left) {
+  background: transparent;
+  box-shadow: none;
+}
+
 </style>
