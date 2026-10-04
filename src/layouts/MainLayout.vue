@@ -27,13 +27,19 @@ import SidebarPanel from '../components/SidebarPanel.vue'
 
 const $q = useQuasar()
 
-const isSmall = computed(() => $q.screen.width < 600)
-const isLarge = computed(() => $q.screen.width >= 1124)
+const OVERLAY_BELOW = 600
+const FIXED_FROM = 1124
+const WIDE_FROM = 1550
+const WIDTH = 300
+const WIDE_WIDTH = 350
+
+const isSmall = computed(() => $q.screen.width < OVERLAY_BELOW)
+const isLarge = computed(() => $q.screen.width >= FIXED_FROM)
 
 const drawerWidth = computed(() => {
-  if (isSmall.value) return Math.min(350, $q.screen.width * 0.85)
-  if ($q.screen.width < 1550) return 300
-  return 350
+  if (isSmall.value) return Math.min(WIDE_WIDTH, $q.screen.width * 0.85)
+  if ($q.screen.width < WIDE_FROM) return WIDTH
+  return WIDE_WIDTH
 })
 
 const drawer = ref(!isSmall.value)

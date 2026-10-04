@@ -3,6 +3,15 @@
     <header class="chat-header">
       <q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="22px" />
       <span class="title">{{ channel.name }}</span>
+      <q-btn
+        v-if="showMembersButton"
+        class="members-btn"
+        flat
+        round
+        icon="group"
+        :color="membersOpen ? 'secondary' : 'white'"
+        @click="emit('toggle-members')"
+      />
     </header>
 
     <div ref="messagesEl" class="messages">
@@ -30,6 +39,13 @@ import { users, channels, messages } from '../mock/data'
 import MessageBubble from './MessageBubble.vue'
 import CommandBar from './CommandBar.vue'
 import TypingIndicator from './TypingIndicator.vue'
+
+defineProps({
+  membersOpen: Boolean,
+  showMembersButton: Boolean,
+})
+
+const emit = defineEmits(['toggle-members'])
 
 const me = users[0]
 const channelId = 1
@@ -80,6 +96,7 @@ onMounted(scrollToEnd)
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background: $dark-page;
   color: $text-light;
 }
@@ -88,9 +105,20 @@ onMounted(scrollToEnd)
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px 12px 64px;
+  min-height: 64px;
+  padding: 0 24px;
   font-size: 20px;
   font-weight: 700;
+}
+
+@media (max-width: 1123px) {
+  .chat-header {
+    padding-left: 64px;
+  }
+}
+
+.members-btn {
+  margin-left: auto;
 }
 
 .messages {

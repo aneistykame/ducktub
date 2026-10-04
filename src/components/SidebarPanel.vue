@@ -26,7 +26,7 @@
       </nav>
 
       <footer class="bottom">
-        <div class="avatar">M</div>
+        <div class="avatar">P</div>
         <div>
           <div class="me-name">pip</div>
           <div class="me-status"><span class="dot"></span> online</div>
