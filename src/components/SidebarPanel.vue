@@ -15,7 +15,19 @@
           @decline="decline(c)"
         />
 
-        <div class="label">Your channels</div>
+        <div class="label">
+          <span>Your channels</span>
+          <q-btn
+            flat
+            round
+            dense
+            size="sm"
+            icon="add"
+            aria-label="Create channel"
+            @click="createOpen = true"
+          />
+        </div>
+
         <ChannelItem
           v-for="c in myChannels"
           :key="c.id"
@@ -45,24 +57,35 @@
       </defs>
       <rect width="100%" height="100%" fill="url(#wave-tile)" />
     </svg>
+
+    <CreateChannelDialog
+      v-model="createOpen"
+      :existing-names="existingNames"
+      @create="createChannel"
+    />
   </aside>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { channels as mockChannels } from '../mock/data'
+import { users, channels as mockChannels } from '../mock/data'
 import ChannelItem from './ChannelItem.vue'
 import InvitationCard from './InvitationCard.vue'
+import CreateChannelDialog from './CreateChannelDialog.vue'
 
 // Logo: Rubber duck icons created by vectorsmarket15 - Flaticon
 // https://www.flaticon.com/free-icons/rubber-duck
 import logo from '../assets/logo.png'
 
+const me = users[0]
+
 const channels = ref([...mockChannels])
 
 const myChannels = computed(() => channels.value.filter((c) => !c.invited))
 const invitations = computed(() => channels.value.filter((c) => c.invited))
+const existingNames = computed(() => channels.value.map((c) => c.name))
 const activeId = ref(1)
+const createOpen = ref(false)
 
 function accept(channel) {
   channel.invited = false
@@ -70,6 +93,12 @@ function accept(channel) {
 
 function decline(channel) {
   channels.value = channels.value.filter((c) => c.id !== channel.id)
+}
+
+function createChannel({ name, type }) {
+  const id = Math.max(0, ...channels.value.map((c) => c.id)) + 1
+  channels.value.unshift({ id, name, type, adminId: me.id, unread: 0, invited: false })
+  activeId.value = id
 }
 </script>
 
@@ -99,7 +128,8 @@ function decline(channel) {
 }
 
 .logo {
-  font-size: 30px;
+  width: 44px;
+  height: 44px;
 }
 
 .middle {
@@ -109,10 +139,16 @@ function decline(channel) {
 }
 
 .label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 10px 8px 18px;
   font-size: 13px;
   font-weight: 700;
+}
+
+.label span {
   opacity: 0.7;
-  margin: 18px 18px 8px;
 }
 
 .bottom {
@@ -160,10 +196,5 @@ function decline(channel) {
 
 .wave-fill {
   fill: $dark;
-}
-
-.logo {
-  width: 44px;
-  height: 44px;
 }
 </style>
