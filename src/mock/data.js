@@ -4,14 +4,27 @@ export const users = [
   { id: 3, firstName: 'Jana', lastName: 'Klinth', nickName: 'jana', email: 'jana@example.com', status: 'online' },
   { id: 4, firstName: 'Tom', lastName: 'Varga', nickName: 'tom', email: 'tom@example.com', status: 'dnd' },
   { id: 5, firstName: 'Lea', lastName: 'Szabo', nickName: 'lea', email: 'lea@example.com', status: 'offline' },
+  { id: 6, firstName: 'Rosa', lastName: 'Kovac', nickName: 'rosa', email: 'rosa@example.com', status: 'online' },
+  { id: 7, firstName: 'Otto', lastName: 'Varga', nickName: 'otto', email: 'otto@example.com', status: 'offline' },
+  { id: 8, firstName: 'Mabel', lastName: 'Szabo', nickName: 'mabel', email: 'mabel@example.com', status: 'dnd' },
+  { id: 9, firstName: 'Nina', lastName: 'Horvath', nickName: 'nina', email: 'nina@example.com', status: 'online' },
+  { id: 10, firstName: 'Viktor', lastName: 'Novak', nickName: 'viktor', email: 'viktor@example.com', status: 'offline' },
+  { id: 11, firstName: 'Zuzana', lastName: 'Kovac', nickName: 'zuza', email: 'zuza@example.com', status: 'dnd' },
+  { id: 12, firstName: 'Otto', lastName: 'Varga', nickName: 'tto', email: 'otto@example.com', status: 'offline' },
+  { id: 13, firstName: 'Mabel', lastName: 'Szabo', nickName: 'abel', email: 'mabel@example.com', status: 'dnd' },
+  { id: 14, firstName: 'Nina', lastName: 'Horvath', nickName: 'ina', email: 'nina@example.com', status: 'online' },
+  { id: 15, firstName: 'Viktor', lastName: 'Novak', nickName: 'iktor', email: 'viktor@example.com', status: 'offline' },
+  { id: 16, firstName: 'Zuzana', lastName: 'Kovac', nickName: 'uza', email: 'zuza@example.com', status: 'dnd' },
 ]
 
+const ago = (minutes) => Date.now() - minutes * 60 * 1000
+
 export const channels = [
-  { id: 1, name: 'the-pond', type: 'public', adminId: 3, unread: 0, invited: false },
-  { id: 2, name: 'kitchen', type: 'public', adminId: 1, unread: 2, invited: false },
-  { id: 3, name: 'school', type: 'public', adminId: 2, unread: 0, invited: false },
-  { id: 4, name: 'hideout', type: 'private', adminId: 1, unread: 0, invited: false },
-  { id: 5, name: 'secret-lake', type: 'private', adminId: 4, unread: 0, invited: true },
+  { id: 1, name: 'the-pond', type: 'public', adminId: 3, unread: 0, invited: false, lastActivity: ago(5), memberIds: [1, 2, 3, 4, 5] },
+  { id: 2, name: 'kitchen', type: 'public', adminId: 1, unread: 2, invited: false, lastActivity: ago(60), memberIds: [1, 2, 3, 6] },
+  { id: 3, name: 'school', type: 'public', adminId: 2, unread: 0, invited: false, lastActivity: ago(180), memberIds: [1, 2, 7] },
+  { id: 4, name: 'hideout', type: 'private', adminId: 1, unread: 0, invited: false, lastActivity: ago(1440), memberIds: [1, 8] },
+  { id: 5, name: 'secret-lake', type: 'private', adminId: 4, unread: 0, invited: true, lastActivity: ago(2880), memberIds: [4] },
 ]
 
 export const messages = [
