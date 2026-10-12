@@ -1,6 +1,6 @@
 <template>
   <q-page class="page">
-    <div v-if="!chat.isLoggedIn" class="empty">
+    <div v-if="!chat.isLoggedIn" class="empty auth-slot">
       <AuthPanel />
     </div>
 
@@ -85,6 +85,29 @@ watch(mode, (m) => {
   color: $text-light;
   font-family: $qt-font;
   text-align: center;
+}
+
+.auth-slot {
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+@media (max-width: 1123px) {
+  .auth-slot {
+    padding-top: 64px;
+  }
+}
+
+@media (max-width: 599px) {
+  .auth-slot {
+    padding: 56px 16px 12px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .auth-slot {
+    padding: 8px 16px 8px 64px;
+  }
 }
 
 .empty-title {

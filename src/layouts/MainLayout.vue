@@ -33,7 +33,12 @@ const WIDE_FROM = 1550
 const WIDTH = 300
 const WIDE_WIDTH = 350
 
-const isSmall = computed(() => $q.screen.width < OVERLAY_BELOW)
+const SHORT_BELOW = 500
+
+// Phones in landscape are wide but short, so they get the phone drawer too
+const isSmall = computed(
+  () => $q.screen.width < OVERLAY_BELOW || ($q.screen.height < SHORT_BELOW && $q.screen.width < FIXED_FROM),
+)
 const isLarge = computed(() => $q.screen.width >= FIXED_FROM)
 
 const drawerWidth = computed(() => {

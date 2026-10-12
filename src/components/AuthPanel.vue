@@ -28,16 +28,16 @@
     </div>
 
     <form v-if="mode === 'login'" class="form" novalidate @submit.prevent="submitLogin">
-      <label class="field">
+      <label class="field wide">
         <span class="field-label">Email or nickname</span>
-        <input v-model="loginForm.login" class="input" type="text" autocomplete="username" required />
+        <input v-model="loginForm.login" placeholder="Email or nickname" class="input" type="text" autocomplete="username" required />
       </label>
       <label class="field">
         <span class="field-label">Password</span>
-        <input v-model="loginForm.password" class="input" type="password" autocomplete="current-password" required />
+        <input v-model="loginForm.password" placeholder="Password" class="input" type="password" autocomplete="current-password" required />
       </label>
 
-      <p v-if="loginError" class="error" role="alert">{{ loginError }}</p>
+      <p v-if="loginError" class="error wide" role="alert">{{ loginError }}</p>
 
       <button type="submit" class="submit" :disabled="!canLogin">Log in</button>
     </form>
@@ -46,17 +46,17 @@
       <div class="pair">
         <label class="field">
           <span class="field-label">First name</span>
-          <input v-model="regForm.firstName" class="input" type="text" autocomplete="given-name" required />
+          <input v-model="regForm.firstName" placeholder="First name" class="input" type="text" autocomplete="given-name" required />
         </label>
         <label class="field">
           <span class="field-label">Last name</span>
-          <input v-model="regForm.lastName" class="input" type="text" autocomplete="family-name" required />
+          <input v-model="regForm.lastName" placeholder="Last name" class="input" type="text" autocomplete="family-name" required />
         </label>
       </div>
       <label class="field">
         <span class="field-label">Nickname</span>
         <input
-          v-model="regForm.nickName"
+          v-model="regForm.nickName" placeholder="Nickname"
           class="input"
           :class="{ invalid: regErrors.nickName }"
           type="text"
@@ -70,7 +70,7 @@
       <label class="field">
         <span class="field-label">Email</span>
         <input
-          v-model="regForm.email"
+          v-model="regForm.email" placeholder="Email"
           class="input"
           :class="{ invalid: regErrors.email }"
           type="email"
@@ -83,7 +83,7 @@
       <label class="field">
         <span class="field-label">Password</span>
         <input
-          v-model="regForm.password"
+          v-model="regForm.password" placeholder="Password"
           class="input"
           :class="{ invalid: regErrors.password }"
           type="password"
@@ -170,17 +170,20 @@ function submitRegister() {
 
 <style lang="scss" scoped>
 .auth {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   width: 420px;
   max-width: 100%;
+  margin-block: auto;
   padding: 32px 28px;
   border-radius: $qt-radius-panel;
   background: $qt-surface;
   color: $qt-ink;
   font-family: $qt-font;
+  text-align: left;
   box-shadow: $qt-shadow-menu, $qt-surface-ring;
 }
 
@@ -360,13 +363,143 @@ function submitRegister() {
   outline-offset: 3px;
 }
 
-@media (max-width: 420px) {
+.input::placeholder {
+  color: transparent;
+}
+
+@container (max-width: 240px) {
+  .pair {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 599px) {
   .auth {
-    padding: 28px 18px;
+    gap: 8px;
+    padding: 24px 16px;
+    border-radius: $qt-radius-card;
+  }
+
+  .logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .input {
+    font-size: 16px;
+  }
+}
+
+@mixin compact-fields {
+  .field-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .input::placeholder {
+    color: $qt-ink-quiet;
+  }
+
+  .field {
+    gap: 4px;
+  }
+
+  .form {
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .submit {
+    margin-top: 2px;
+  }
+}
+
+@media (max-height: 700px) {
+  @include compact-fields;
+
+  .logo {
+    display: none;
+  }
+
+  .auth {
+    gap: 8px;
+    padding: 20px 16px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: portrait) {
+  .subtitle {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .auth {
+    display: grid;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 20px;
+    row-gap: 6px;
+    align-items: start;
+    width: 100%;
+    max-width: 760px;
+    padding: 16px 18px;
+  }
+
+  .title,
+  .subtitle {
+    text-align: left;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .switch {
+    margin-top: 4px;
+  }
+
+  .form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    align-items: end;
+    gap: 8px 10px;
+    margin: 0;
   }
 
   .pair {
-    flex-direction: column;
+    display: contents;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .submit {
+    margin: 0;
   }
 }
 
