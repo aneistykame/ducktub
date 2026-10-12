@@ -44,6 +44,22 @@ export const useChatStore = defineStore('chat', () => {
     setActive(id)
   }
 
+  // Leaving as the admin deletes the channel for everyone
+  function leaveChannel(channel) {
+    if (channel.adminId === me.id) {
+      messages.value = messages.value.filter((m) => m.channelId !== channel.id)
+    } else {
+      channel.memberIds = channel.memberIds.filter((id) => id !== me.id)
+    }
+    channels.value = channels.value.filter((c) => c.id !== channel.id)
+
+    if (activeId.value === channel.id) {
+      const next = channels.value.find((c) => !c.invited)
+      activeId.value = next ? next.id : null
+      if (next) next.unread = 0
+    }
+  }
+
   function inviteToActive(user) {
     const ids = activeChannel.value.invitedIds
     if (!ids.includes(user.id)) ids.push(user.id)
@@ -78,6 +94,7 @@ export const useChatStore = defineStore('chat', () => {
     acceptInvite,
     declineInvite,
     createChannel,
+    leaveChannel,
     inviteToActive,
     setStatus,
     sendMessage,

@@ -34,6 +34,7 @@
           :channel="c"
           :active="c.id === chat.activeId"
           @click="chat.setActive(c.id)"
+          @leave="askLeave(c)"
         />
       </nav>
 
@@ -61,6 +62,8 @@
     />
 
     <ProfileDialog v-model="profileOpen" :user="me" />
+
+    <LeaveChannelDialog v-model="leaveOpen" :channel="leaving" />
   </aside>
 </template>
 
@@ -71,6 +74,7 @@ import ChannelItem from './ChannelItem.vue'
 import InvitationCard from './InvitationCard.vue'
 import CreateChannelDialog from './CreateChannelDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
+import LeaveChannelDialog from './LeaveChannelDialog.vue'
 import StatusPicker from './StatusPicker.vue'
 
 // Logo: Rubber duck icons created by vectorsmarket15 - Flaticon
@@ -85,6 +89,14 @@ const invitations = computed(() => chat.channels.filter((c) => c.invited))
 const existingNames = computed(() => chat.channels.map((c) => c.name))
 const createOpen = ref(false)
 const profileOpen = ref(false)
+
+const leaveOpen = ref(false)
+const leaving = ref(null)
+
+function askLeave(channel) {
+  leaving.value = channel
+  leaveOpen.value = true
+}
 </script>
 
 <style lang="scss" scoped>
@@ -138,7 +150,7 @@ const profileOpen = ref(false)
 
 .bottom {
   padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
-  border-top: 1px solid rgba($qt-foam, 0.16);
+  border-top: 1px solid $qt-line;
 }
 
 .wave {

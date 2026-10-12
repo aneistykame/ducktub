@@ -1,25 +1,32 @@
 <template>
   <q-page class="page">
-    <ChatArea
-      class="chat-slot"
-      :members-open="showMembers"
-      :show-members-button="mode !== 'fixed'"
-      @toggle-members="showMembers = !showMembers"
-    />
+    <div v-if="!chat.activeChannel" class="empty">
+      <h2 class="empty-title">No tubs yet</h2>
+      <p class="empty-text">Create a channel or accept an invite to start quacking.</p>
+    </div>
 
-    <div
-      v-if="mode === 'overlay' && showMembers"
-      class="backdrop"
-      @click="showMembers = false"
-    ></div>
+    <template v-else>
+      <ChatArea
+        class="chat-slot"
+        :members-open="showMembers"
+        :show-members-button="mode !== 'fixed'"
+        @toggle-members="showMembers = !showMembers"
+      />
 
-    <MembersPanel
-      v-if="showMembers"
-      :class="{ overlay: mode === 'overlay' }"
-      :closable="mode !== 'fixed'"
-      :width="panelWidth"
-      @close="showMembers = false"
-    />
+      <div
+        v-if="mode === 'overlay' && showMembers"
+        class="backdrop"
+        @click="showMembers = false"
+      ></div>
+
+      <MembersPanel
+        v-if="showMembers"
+        :class="{ overlay: mode === 'overlay' }"
+        :closable="mode !== 'fixed'"
+        :width="panelWidth"
+        @close="showMembers = false"
+      />
+    </template>
   </q-page>
 </template>
 
@@ -28,8 +35,10 @@ import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import MembersPanel from '../components/MembersPanel.vue'
 import ChatArea from '../components/ChatArea.vue'
+import { useChatStore } from '../stores/chat'
 
 const $q = useQuasar()
+const chat = useChatStore()
 
 const OVERLAY_BELOW = 900
 const FIXED_FROM = 1200
@@ -56,6 +65,36 @@ watch(mode, (m) => {
 .page {
   position: relative;
   display: flex;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 100dvh;
+  padding: 24px;
+  background: $dark-page;
+  color: $text-light;
+  font-family: $qt-font;
+  text-align: center;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.empty-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: $qt-ink-quiet;
 }
 
 .chat-slot {

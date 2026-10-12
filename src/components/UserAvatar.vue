@@ -55,15 +55,15 @@ $avatar-colors: #7fd3f0, #ffd84d, #f4a6bc, #b8e986, #c9a7f5, #ffb27a;
   }
 
   .ringed.c#{$i} {
-    background: mix(nth($avatar-colors, $i + 1), $qt-foam, 40%);
+    background: mix(nth($avatar-colors, $i + 1), #fff, 40%);
     box-shadow:
       0 0 0 2.5px nth($avatar-colors, $i + 1),
-      0 0 0 5px var(--avatar-gap, #{$qt-foam});
+      0 0 0 5px var(--avatar-gap, #{$qt-bg});
   }
 }
 
 .ringed {
-  color: $qt-ink;
+  color: $qt-duck-ink;
   font-weight: 900;
 }
 

@@ -116,23 +116,25 @@ const current = computed(() => status[chat.me.status])
   }
 
   &:hover .chip {
-    background: rgba($qt-foam, 0.24);
+    background: $qt-water-chip-hover;
   }
 }
+
 .picker.profile {
   display: flex;
   gap: 12px;
   width: 100%;
   min-height: 58px;
   padding: 8px 12px 8px 8px;
+  color: $qt-water-ink;
 
   &:hover {
-    background: rgba($qt-foam, 0.14);
+    background: $qt-water-chip;
   }
 }
 
 .me-avatar {
-  --avatar-gap: #{$qt-deep-water};
+  --avatar-gap: #{$qt-water};
   margin: 4px;
 }
 
@@ -158,10 +160,10 @@ const current = computed(() => status[chat.me.status])
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 8px 3px 8px;
+  padding: 3px 8px;
   border-radius: $qt-radius-pill;
-  background: rgba($qt-foam, 0.14);
-  box-shadow: inset 0 0 0 1px rgba($qt-foam, 0.2);
+  background: $qt-water-chip;
+  box-shadow: inset 0 0 0 1px rgba($qt-glow, 0.2);
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
@@ -187,20 +189,6 @@ const current = computed(() => status[chat.me.status])
   background: $qt-status-offline;
 }
 
-.body--dark {
-  .picker.profile:hover {
-    background: rgba($qt-glow, 0.1);
-  }
-
-  .me-avatar {
-    --avatar-gap: #{$qt-night-tub};
-  }
-
-  .chip {
-    background: rgba($qt-glow, 0.1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .picker,
   .chip {
@@ -214,10 +202,10 @@ const current = computed(() => status[chat.me.status])
   min-width: 248px;
   padding: 6px;
   border-radius: 26px;
-  background: $qt-foam;
+  background: $qt-surface;
   color: $qt-ink;
   font-family: $qt-font;
-  box-shadow: 0 16px 40px rgba($qt-deep-water, 0.22), inset 0 0 0 1px rgba($qt-ink, 0.06);
+  box-shadow: $qt-shadow-menu, $qt-surface-ring;
 
   .status-list {
     display: flex;
@@ -240,7 +228,7 @@ const current = computed(() => status[chat.me.status])
   }
 
   .status-row.current {
-    background: rgba($qt-ink, 0.07);
+    background: $qt-chip;
     color: inherit;
 
     .dot {
@@ -257,18 +245,18 @@ const current = computed(() => status[chat.me.status])
   .hint {
     font-size: 12px;
     font-weight: 700;
-    color: $qt-quiet-ink;
+    color: $qt-ink-quiet;
   }
 
   .row-icon {
     width: 12px;
-    color: $qt-quiet-ink;
+    color: $qt-ink-quiet;
   }
 
   .divider {
     height: 1px;
     margin: 4px 14px;
-    background: rgba($qt-ink, 0.08);
+    background: $qt-line;
     list-style: none;
   }
 
@@ -289,25 +277,6 @@ const current = computed(() => status[chat.me.status])
 
   .offline {
     background: $qt-status-offline;
-  }
-}
-
-.body--dark .status-menu {
-  background: $qt-night-foam;
-  color: $qt-moon-ink;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba($qt-glow, 0.12);
-
-  .status-row.current {
-    background: rgba($qt-moon-ink, 0.08);
-  }
-
-  .hint,
-  .row-icon {
-    color: $qt-night-quiet-ink;
-  }
-
-  .divider {
-    background: rgba($qt-moon-ink, 0.1);
   }
 }
 </style>
