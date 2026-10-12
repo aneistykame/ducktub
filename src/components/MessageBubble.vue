@@ -1,7 +1,19 @@
 <template>
   <div class="msg" :class="{ mine, grouped: !showMeta }">
     <template v-if="!mine">
-      <div v-if="showAvatar" class="avatar" :class="colorClass">{{ initial }}</div>
+      <div
+        v-if="showAvatar"
+        class="avatar"
+        :class="colorClass"
+        role="button"
+        tabindex="0"
+        :aria-label="`Open ${author.nickName}'s profile`"
+        @click="emit('open-profile', author)"
+        @keyup.enter="emit('open-profile', author)"
+      >
+        {{ initial }}
+      </div>
+
       <div v-else class="avatar-space"></div>
     </template>
 
@@ -20,7 +32,16 @@
       <div class="bubble" :class="{ mine, mention }">
         <div class="text">
           <template v-for="(p, i) in parts" :key="i">
-            <span v-if="p.tag" class="tag">{{ p.text }}</span>
+            <button
+              v-if="p.user"
+              type="button"
+              class="tag"
+              :aria-label="`Open ${p.user.nickName}'s profile`"
+              @click="emit('open-profile', p.user)"
+            >
+              {{ p.text }}
+            </button>
+            <span v-else-if="p.tag" class="tag">{{ p.text }}</span>
             <template v-else>{{ p.text }}</template>
           </template>
         </div>
@@ -31,6 +52,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useChatStore } from '../stores/chat'
 
 const props = defineProps({
   message: Object,
@@ -40,15 +62,23 @@ const props = defineProps({
   showMeta: Boolean,
   showAvatar: Boolean,
 })
+const emit = defineEmits(['open-profile'])
 
 const initial = computed(() => props.author.nickName[0].toUpperCase())
 const colorClass = computed(() => 'c' + (props.author.id % 6))
+
+const chat = useChatStore()
+const findUser = (nick) => chat.users.find((u) => u.nickName.toLowerCase() === nick.toLowerCase())
 
 const parts = computed(() =>
   props.message.text
     .split(/(@\w+)/)
     .filter(Boolean)
-    .map((t) => ({ text: t, tag: t.startsWith('@') })),
+    .map((t) => {
+      const tag = t.startsWith('@')
+      const user = tag ? findUser(t.slice(1)) : null
+      return { text: t, tag, user }
+    }),
 )
 </script>
 
@@ -78,6 +108,7 @@ $avatar-colors: #7fd3f0, #ffd84d, #f4a6bc, #b8e986, #c9a7f5, #ffb27a;
 }
 
 .avatar {
+  cursor: pointer;
   border-radius: 50%;
   color: $text-dark;
   display: flex;
@@ -146,5 +177,22 @@ $avatar-colors: #7fd3f0, #ffd84d, #f4a6bc, #b8e986, #c9a7f5, #ffb27a;
   font-weight: 700;
   border-radius: 999px;
   padding: 0 8px;
+}
+
+button.tag {
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.tag:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+button.tag:focus-visible {
+  outline: 3px solid $qt-duck;
+  outline-offset: 2px;
 }
 </style>

@@ -20,16 +20,19 @@
         :key="i.m.id"
         :message="i.m"
         :author="authorOf(i.m)"
-        :mine="i.m.authorId === me.id"
-        :mention="i.m.mentions.includes(me.nickName)"
+        :mine="i.m.authorId === chat.me.id"
+        :mention="i.m.mentions.includes(chat.me.nickName)"
         :show-meta="i.first"
         :show-avatar="i.last"
+        @open-profile="openProfile"
       />
     </div>
 
     <TypingIndicator :nick="typing.nick" :draft="typing.draft" />
 
     <CommandBar @submit="onSubmit" />
+
+    <ProfileDialog v-model="profileOpen" :user="profileUser" />
   </main>
 </template>
 
@@ -39,6 +42,7 @@ import { useChatStore } from '../stores/chat'
 import MessageBubble from './MessageBubble.vue'
 import CommandBar from './CommandBar.vue'
 import TypingIndicator from './TypingIndicator.vue'
+import ProfileDialog from './ProfileDialog.vue'
 
 defineProps({
   membersOpen: Boolean,
@@ -48,10 +52,17 @@ defineProps({
 const emit = defineEmits(['toggle-members'])
 
 const chat = useChatStore()
-const me = chat.me
 const typing = { nick: 'ed', draft: 'I can bring dess' }
 
 const messagesEl = ref(null)
+
+const profileOpen = ref(false)
+const profileUser = ref(null)
+
+function openProfile(user) {
+  profileUser.value = user
+  profileOpen.value = true
+}
 
 const channel = computed(() => chat.activeChannel)
 const channelMessages = computed(() => chat.activeMessages)

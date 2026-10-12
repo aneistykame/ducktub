@@ -1,5 +1,4 @@
-registrácia, prihlásenie a odhlásenie používateľa - používateľ má meno a priezvisko, nickName a email
-    ak nie je kanál aktívny (nie je pridaná nová správa) viac ako 30 dní, kanál prestáva existovať (následne je možné použiť channelName kanála pre "nový" kanál)
+ak nie je kanál aktívny (nie je pridaná nová správa) viac ako 30 dní, kanál prestáva existovať (následne je možné použiť channelName kanála pre "nový" kanál)
 používateľ odosiela správy a príkazy cez "príkazový riadok", ktorý je "fixným" prvkom aplikácie. používateľ môže odoslať správu v kanáli, ktorého je členom
 vytvorenie komunikačného kanála (channel) cez príkazový riadok
     kanál môže vytvoriť ľubovolný používateľ cez príkaz /join channelName [private]
@@ -9,8 +8,6 @@ vytvorenie komunikačného kanála (channel) cez príkazový riadok
     vo verejnom kanáli môže člen "vyhodiť" iného člena príkazom /kick nickName. ak tak spravia aspoň 3 členovia, používateľ má "trvalý" ban pre daný kanál. správca môže používateľa vyhodiť "natrvalo" kedykoľvek príkazom /kick nickName, alebo naopak "obnovit" používateľovi prístup do kanála cez príkaz /invite
     správca môže kanál zatvoriť/zrušiť príkazom /quit
 používateľ môže zrušiť svoje členstvo v kanáli príkazom /cancel, ak tak spraví správca kanála, kanál zaniká
-správu v kanáli je možné adresovať konkrétnemu používateľovi cez príkaz @nickname
-    správa je zvýraznená danému používateľovi v zozname správ
 používateľ si môže pozrieť kompletnú históriu správ
 používateľ je informovaný o každej novej správe prostredníctvom notifikácie
     notifikácia sa vystavuje iba ak aplikácia nie je v stave "visible" (pozrite quasar docu App Visibility)
@@ -38,3 +35,6 @@ používateľ si môže nastaviť stav (online, DND, offline)
 pri opustení kanála, alebo trvalom vyhodení z kanála je daný kanál odobratý zo zoznamu
 v zozname môže cez používateľské rozhranie kanál vytvoriť, opustiť, a ak je správcom aj zrušiť
 správcom kanála je používateľ, ktorý kanál vytvoril
+registrácia, prihlásenie a odhlásenie používateľa - používateľ má meno a priezvisko, nickName a email
+správu v kanáli je možné adresovať konkrétnemu používateľovi cez príkaz @nickname
+    správa je zvýraznená danému používateľovi v zozname správ

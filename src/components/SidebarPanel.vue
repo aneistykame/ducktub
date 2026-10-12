@@ -6,7 +6,7 @@
         QuackTub
       </header>
 
-      <nav class="middle">
+      <nav v-if="chat.isLoggedIn" class="middle">
         <InvitationCard
           v-for="c in invitations"
           :key="c.id"
@@ -38,7 +38,12 @@
         />
       </nav>
 
-      <footer class="bottom">
+      <div v-else class="middle logged-out">
+        <q-icon name="lock_outline" size="22px" />
+        <p>Log in to see your channels.</p>
+      </div>
+
+      <footer v-if="chat.isLoggedIn" class="bottom">
         <StatusPicker profile @open-profile="profileOpen = true" />
       </footer>
     </div>
@@ -61,7 +66,7 @@
       @create="chat.createChannel"
     />
 
-    <ProfileDialog v-model="profileOpen" :user="me" />
+    <ProfileDialog v-model="profileOpen" :user="chat.me" />
 
     <LeaveChannelDialog v-model="leaveOpen" :channel="leaving" />
   </aside>
@@ -82,10 +87,8 @@ import StatusPicker from './StatusPicker.vue'
 import logo from '../assets/logo.png'
 
 const chat = useChatStore()
-const me = chat.me
-
-const myChannels = computed(() => chat.channels.filter((c) => !c.invited))
-const invitations = computed(() => chat.channels.filter((c) => c.invited))
+const myChannels = computed(() => chat.myChannels)
+const invitations = computed(() => chat.myInvitations)
 const existingNames = computed(() => chat.channels.map((c) => c.name))
 const createOpen = ref(false)
 const profileOpen = ref(false)
@@ -146,6 +149,24 @@ function askLeave(channel) {
 
 .label span {
   opacity: 0.7;
+}
+
+.logged-out {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: $qt-water-ink-quiet;
+  font-family: $qt-font;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
 }
 
 .bottom {

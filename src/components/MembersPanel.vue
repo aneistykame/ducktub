@@ -102,7 +102,6 @@ const emit = defineEmits(['close'])
 const widthPx = computed(() => props.width + 'px')
 
 const chat = useChatStore()
-const me = chat.me
 const channel = computed(() => chat.activeChannel)
 
 const memberIds = computed(() => channel.value.memberIds)
@@ -121,13 +120,11 @@ const invited = computed(() => chat.users.filter((u) => invitedIds.value.include
 const candidates = computed(() => chat.users.filter((u) => !memberIds.value.includes(u.id)))
 
 const knownIds = computed(() => {
-  const ids = chat.channels
-    .filter((c) => !c.invited && c.memberIds.includes(me.id))
-    .flatMap((c) => c.memberIds)
-  return [...new Set(ids)].filter((id) => id !== me.id)
+  const ids = chat.myChannels.flatMap((c) => c.memberIds)
+  return [...new Set(ids)].filter((id) => id !== chat.me.id)
 })
 
-const canInvite = computed(() => channel.value.type === 'public' || channel.value.adminId === me.id)
+const canInvite = computed(() => channel.value.type === 'public' || channel.value.adminId === chat.me.id)
 const adminNick = computed(() => chat.users.find((u) => u.id === channel.value.adminId)?.nickName)
 
 function invite(user) {

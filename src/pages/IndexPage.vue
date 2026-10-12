@@ -1,6 +1,10 @@
 <template>
   <q-page class="page">
-    <div v-if="!chat.activeChannel" class="empty">
+    <div v-if="!chat.isLoggedIn" class="empty">
+      <AuthPanel />
+    </div>
+
+    <div v-else-if="!chat.activeChannel" class="empty">
       <h2 class="empty-title">No tubs yet</h2>
       <p class="empty-text">Create a channel or accept an invite to start quacking.</p>
     </div>
@@ -35,6 +39,7 @@ import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import MembersPanel from '../components/MembersPanel.vue'
 import ChatArea from '../components/ChatArea.vue'
+import AuthPanel from '../components/AuthPanel.vue'
 import { useChatStore } from '../stores/chat'
 
 const $q = useQuasar()

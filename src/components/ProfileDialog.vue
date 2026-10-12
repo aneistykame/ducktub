@@ -33,6 +33,11 @@
           <dd>{{ user.email }}</dd>
         </div>
       </dl>
+
+      <button v-if="isMe" type="button" class="logout" @click="logout">
+        <q-icon name="logout" size="18px" />
+        Log out
+      </button>
     </q-card>
   </q-dialog>
 </template>
@@ -49,14 +54,19 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
-const me = useChatStore().me
-const isMe = computed(() => props.user?.id === me.id)
+const chat = useChatStore()
+const isMe = computed(() => !!chat.me && props.user?.id === chat.me.id)
 
 const statusLabel = { online: 'Floating', dnd: 'Do Not Splash', offline: 'Drying Off' }
 
 
 function close() {
   emit('update:modelValue', false)
+}
+
+function logout() {
+  close()
+  chat.logout()
 }
 </script>
 
@@ -136,6 +146,47 @@ function close() {
 dt {
   font-size: 13px;
   opacity: 0.7;
+}
+
+.logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: $qt-touch;
+  padding: 0 18px;
+  border: 0;
+  border-radius: $qt-radius-pill;
+  background: $qt-chip;
+  color: $qt-fail-ink;
+  font-family: $qt-font;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.logout:hover {
+  background: $qt-fail-bg;
+}
+
+.logout:active {
+  transform: scale(0.97);
+}
+
+.logout:focus-visible {
+  outline: 3px solid $qt-duck;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logout {
+    transition: none;
+  }
+
+  .logout:active {
+    transform: none;
+  }
 }
 
 dd {
