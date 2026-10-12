@@ -87,7 +87,6 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { users } from '../mock/data'
 import { useChatStore } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
 import InviteDialog from './InviteDialog.vue'
@@ -111,15 +110,15 @@ const invitedIds = computed(() => channel.value.invitedIds)
 const inviteOpen = ref(false)
 
 const order = { online: 0, dnd: 1, offline: 2 }
-const statusLabel = { online: 'online', dnd: 'do not disturb', offline: 'offline' }
+const statusLabel = { online: 'Floating', dnd: 'Do Not Splash', offline: 'Drying Off' }
 
 const members = computed(() =>
-  users
+  chat.users
     .filter((u) => memberIds.value.includes(u.id))
     .sort((a, b) => order[a.status] - order[b.status]),
 )
-const invited = computed(() => users.filter((u) => invitedIds.value.includes(u.id)))
-const candidates = computed(() => users.filter((u) => !memberIds.value.includes(u.id)))
+const invited = computed(() => chat.users.filter((u) => invitedIds.value.includes(u.id)))
+const candidates = computed(() => chat.users.filter((u) => !memberIds.value.includes(u.id)))
 
 const knownIds = computed(() => {
   const ids = chat.channels
@@ -129,7 +128,7 @@ const knownIds = computed(() => {
 })
 
 const canInvite = computed(() => channel.value.type === 'public' || channel.value.adminId === me.id)
-const adminNick = computed(() => users.find((u) => u.id === channel.value.adminId)?.nickName)
+const adminNick = computed(() => chat.users.find((u) => u.id === channel.value.adminId)?.nickName)
 
 function invite(user) {
   chat.inviteToActive(user)

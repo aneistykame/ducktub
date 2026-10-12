@@ -35,7 +35,6 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import { users } from '../mock/data'
 import { useChatStore } from '../stores/chat'
 import MessageBubble from './MessageBubble.vue'
 import CommandBar from './CommandBar.vue'
@@ -56,7 +55,7 @@ const messagesEl = ref(null)
 
 const channel = computed(() => chat.activeChannel)
 const channelMessages = computed(() => chat.activeMessages)
-const authorOf = (m) => users.find((u) => u.id === m.authorId)
+const authorOf = (m) => chat.users.find((u) => u.id === m.authorId)
 
 const items = computed(() =>
   channelMessages.value.map((m, i, arr) => ({

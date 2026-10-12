@@ -37,14 +37,8 @@
         />
       </nav>
 
-      <footer>
-        <button type="button" class="bottom" aria-label="Open your profile" @click="profileOpen = true">
-          <div class="avatar">P</div>
-          <div>
-            <div class="me-name">pip</div>
-            <div class="me-status"><span class="dot"></span> online</div>
-          </div>
-        </button>
+      <footer class="bottom">
+        <StatusPicker profile @open-profile="profileOpen = true" />
       </footer>
     </div>
 
@@ -77,6 +71,7 @@ import ChannelItem from './ChannelItem.vue'
 import InvitationCard from './InvitationCard.vue'
 import CreateChannelDialog from './CreateChannelDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
+import StatusPicker from './StatusPicker.vue'
 
 // Logo: Rubber duck icons created by vectorsmarket15 - Flaticon
 // https://www.flaticon.com/free-icons/rubber-duck
@@ -142,51 +137,8 @@ const profileOpen = ref(false)
 }
 
 .bottom {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 14px 16px;
-  border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.bottom:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: $secondary;
-  color: $text-dark;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-
-.me-name {
-  font-weight: 700;
-}
-
-.me-status {
-  font-size: 13px;
-  opacity: 0.85;
-}
-
-.dot {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: $positive;
+  padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba($qt-foam, 0.16);
 }
 
 .wave {

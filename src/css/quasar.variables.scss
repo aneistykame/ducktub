@@ -32,3 +32,63 @@ $warning: #FFD84D;
 $positive: #21ba45;
 $negative: #c10015;
 
+// Color: water
+$qt-water: #1672AA;
+$qt-deep-water: #0C5586;
+$qt-my-bubble: #1B6A96;
+$qt-aqua: #EAF7FB;
+
+// Color: duck
+$qt-duck: #FFD84D;
+$qt-duck-shade: #F2B92E;
+$qt-beak: #FF8A3D;
+$qt-blush: #FF9EC4;
+
+// Color: ink & foam
+$qt-ink: #0D3B47;
+$qt-quiet-ink: #3D6571;
+$qt-foam: #FDFFFF;
+$qt-pale-duck: #FFF1B8;
+
+// Color: night bath
+$qt-night-water: #07222C;
+$qt-night-tub: #0D4661;
+$qt-night-tub-deep: #072E40;
+$qt-night-foam: #0F3947;
+$qt-night-quiet-ink: #A2C6CF;
+$qt-glow: #7FD3F0;
+$qt-glow-ink: #06232E;
+$qt-moon-ink: #E3F4F7;
+
+// Color: feedback
+$qt-error-bg: #FFE3EC;
+$qt-error: #A3244F;
+
+// Status dots
+$qt-status-online: #35C98A;
+$qt-status-away: #FFD84D;
+$qt-status-dnd: #FF7A9A;
+$qt-status-offline: #9FB6BD;
+
+// Type
+$qt-font: Nunito, ui-rounded, system-ui, sans-serif;
+
+// Shape
+$qt-radius-pill: 999px;
+$qt-radius-bubble: 24px;
+$qt-radius-card: 28px;
+$qt-radius-panel: 32px;
+$qt-touch: 44px;
+
+// Depth
+$qt-shadow-card: 0 10px 30px rgba(14, 90, 140, 0.08);
+$qt-shadow-float: 0 8px 20px rgba(14, 90, 140, 0.14);
+$qt-shadow-menu: 0 16px 40px rgba(12, 85, 134, 0.18);
+$qt-shadow-bubble: 0 4px 14px rgba(14, 90, 140, 0.1);
+$qt-sheen: inset 0 0 0 1px rgba(255, 255, 255, 0.8), inset 3px 3px 8px rgba(140, 190, 255, 0.28), inset -3px -4px 9px rgba(255, 158, 196, 0.24);
+$qt-glow-shadow: 0 0 22px rgba(127, 211, 240, 0.45);
+
+// Motion
+$qt-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+$qt-ease-pop: cubic-bezier(0.5, 0, 0.75, 0);
+

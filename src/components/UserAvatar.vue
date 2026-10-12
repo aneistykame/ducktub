@@ -1,5 +1,5 @@
 <template>
-  <div class="avatar" :class="[colorClass, { small, large }]">
+  <div class="avatar" :class="[colorClass, { small, large, ringed }]">
     {{ initial }}
     <span v-if="status" class="dot" :class="status"></span>
   </div>
@@ -13,6 +13,7 @@ const props = defineProps({
   small: Boolean,
   large: Boolean,
   status: String,
+  ringed: Boolean,
 })
 
 const initial = computed(() => props.user.nickName[0].toUpperCase())
@@ -52,6 +53,18 @@ $avatar-colors: #7fd3f0, #ffd84d, #f4a6bc, #b8e986, #c9a7f5, #ffb27a;
   .c#{$i} {
     background: nth($avatar-colors, $i + 1);
   }
+
+  .ringed.c#{$i} {
+    background: mix(nth($avatar-colors, $i + 1), $qt-foam, 40%);
+    box-shadow:
+      0 0 0 2.5px nth($avatar-colors, $i + 1),
+      0 0 0 5px var(--avatar-gap, #{$qt-foam});
+  }
+}
+
+.ringed {
+  color: $qt-ink;
+  font-weight: 900;
 }
 
 .dot {

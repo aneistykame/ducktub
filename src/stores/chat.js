@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { users, channels as mockChannels, messages as mockMessages } from '../mock/data'
+import { users as mockUsers, channels as mockChannels, messages as mockMessages } from '../mock/data'
 
 export const useChatStore = defineStore('chat', () => {
-  const me = users[0]
+  const users = ref(mockUsers.map((u) => ({ ...u })))
+  const me = users.value[0]
 
   const channels = ref(mockChannels.map((c) => ({ ...c, memberIds: [...(c.memberIds ?? [])], invitedIds: [] })))
   const messages = ref([...mockMessages])
@@ -48,6 +49,10 @@ export const useChatStore = defineStore('chat', () => {
     if (!ids.includes(user.id)) ids.push(user.id)
   }
 
+  function setStatus(status) {
+    me.status = status
+  }
+
   function sendMessage(text) {
     const mentions = (text.match(/@\w+/g) || []).map((t) => t.slice(1))
 
@@ -64,6 +69,7 @@ export const useChatStore = defineStore('chat', () => {
 
   return {
     me,
+    users,
     channels,
     activeId,
     activeChannel,
@@ -73,6 +79,7 @@ export const useChatStore = defineStore('chat', () => {
     declineInvite,
     createChannel,
     inviteToActive,
+    setStatus,
     sendMessage,
   }
 })

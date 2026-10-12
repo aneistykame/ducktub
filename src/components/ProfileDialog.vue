@@ -7,10 +7,11 @@
       </header>
 
       <div class="hero">
-        <UserAvatar :user="user" large />
+        <UserAvatar :user="user" large ringed />
         <div>
           <div class="nick">{{ user.nickName }}</div>
-          <div class="state"><span class="dot" :class="user.status"></span> {{ statusLabel[user.status] }}</div>
+          <StatusPicker v-if="isMe" />
+          <div v-else class="state"><span class="dot" :class="user.status"></span> {{ statusLabel[user.status] }}</div>
         </div>
       </div>
 
@@ -38,8 +39,9 @@
 
 <script setup>
 import { computed } from 'vue'
-import { users } from '../mock/data'
+import { useChatStore } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
+import StatusPicker from './StatusPicker.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -47,10 +49,11 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
-const me = users[0]
+const me = useChatStore().me
 const isMe = computed(() => props.user?.id === me.id)
 
-const statusLabel = { online: 'online', dnd: 'do not disturb', offline: 'offline' }
+const statusLabel = { online: 'Floating', dnd: 'Do Not Splash', offline: 'Drying Off' }
+
 
 function close() {
   emit('update:modelValue', false)
