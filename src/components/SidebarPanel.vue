@@ -37,12 +37,14 @@
         />
       </nav>
 
-      <footer class="bottom">
-        <div class="avatar">P</div>
-        <div>
-          <div class="me-name">pip</div>
-          <div class="me-status"><span class="dot"></span> online</div>
-        </div>
+      <footer>
+        <button type="button" class="bottom" aria-label="Open your profile" @click="profileOpen = true">
+          <div class="avatar">P</div>
+          <div>
+            <div class="me-name">pip</div>
+            <div class="me-status"><span class="dot"></span> online</div>
+          </div>
+        </button>
       </footer>
     </div>
 
@@ -63,6 +65,8 @@
       :existing-names="existingNames"
       @create="createChannel"
     />
+
+    <ProfileDialog v-model="profileOpen" :user="me" />
   </aside>
 </template>
 
@@ -72,6 +76,7 @@ import { users, channels as mockChannels } from '../mock/data'
 import ChannelItem from './ChannelItem.vue'
 import InvitationCard from './InvitationCard.vue'
 import CreateChannelDialog from './CreateChannelDialog.vue'
+import ProfileDialog from './ProfileDialog.vue'
 
 // Logo: Rubber duck icons created by vectorsmarket15 - Flaticon
 // https://www.flaticon.com/free-icons/rubber-duck
@@ -86,6 +91,7 @@ const invitations = computed(() => channels.value.filter((c) => c.invited))
 const existingNames = computed(() => channels.value.map((c) => c.name))
 const activeId = ref(1)
 const createOpen = ref(false)
+const profileOpen = ref(false)
 
 function accept(channel) {
   channel.invited = false
@@ -155,8 +161,19 @@ function createChannel({ name, type }) {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
   padding: 14px 16px;
+  border: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bottom:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .avatar {

@@ -31,7 +31,16 @@
     </div>
 
     <ul class="list">
-      <li v-for="u in members" :key="u.id" class="member" :class="{ off: u.status !== 'online' }">
+      <li
+        v-for="u in members"
+        :key="u.id"
+        class="member"
+        :class="{ off: u.status !== 'online' }"
+        role="button"
+        tabindex="0"
+        @click="openProfile(u)"
+        @keyup.enter="openProfile(u)"
+      >
         <UserAvatar :user="u" :status="u.status" small />
         <div class="info">
           <div class="name">
@@ -44,7 +53,15 @@
 
       <li v-if="invited.length" class="divider"></li>
 
-      <li v-for="u in invited" :key="'invited-' + u.id" class="member off">
+      <li
+        v-for="u in invited"
+        :key="'invited-' + u.id"
+        class="member off"
+        role="button"
+        tabindex="0"
+        @click="openProfile(u)"
+        @keyup.enter="openProfile(u)"
+      >
         <UserAvatar :user="u" small />
         <div class="info">
           <div class="name">{{ u.nickName }}</div>
@@ -63,6 +80,8 @@
       :invited-ids="invitedIds"
       @invite="invite"
     />
+
+    <ProfileDialog v-model="profileOpen" :user="profileUser" />
   </aside>
 </template>
 
@@ -71,6 +90,7 @@ import { ref, computed } from 'vue'
 import { users, channels } from '../mock/data'
 import UserAvatar from './UserAvatar.vue'
 import InviteDialog from './InviteDialog.vue'
+import ProfileDialog from './ProfileDialog.vue'
 import Pond from './Pond.vue'
 
 const props = defineProps({
@@ -115,6 +135,14 @@ function invite(user) {
 }
 
 const deniedShown = ref(false)
+
+const profileOpen = ref(false)
+const profileUser = ref(null)
+
+function openProfile(user) {
+  profileUser.value = user
+  profileOpen.value = true
+}
 
 function onInviteClick() {
   if (canInvite.value) {
@@ -187,6 +215,7 @@ function onInviteClick() {
   gap: 12px;
   padding: 8px 10px;
   border-radius: 14px;
+  cursor: pointer;
 }
 
 .member:hover {

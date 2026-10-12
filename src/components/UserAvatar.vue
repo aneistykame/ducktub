@@ -1,5 +1,5 @@
 <template>
-  <div class="avatar" :class="[colorClass, { small }]">
+  <div class="avatar" :class="[colorClass, { small, large }]">
     {{ initial }}
     <span v-if="status" class="dot" :class="status"></span>
   </div>
@@ -11,6 +11,7 @@ import { computed } from 'vue'
 const props = defineProps({
   user: Object,
   small: Boolean,
+  large: Boolean,
   status: String,
 })
 
@@ -39,6 +40,12 @@ $avatar-colors: #7fd3f0, #ffd84d, #f4a6bc, #b8e986, #c9a7f5, #ffb27a;
   width: 36px;
   height: 36px;
   font-size: 14px;
+}
+
+.avatar.large {
+  width: 64px;
+  height: 64px;
+  font-size: 26px;
 }
 
 @for $i from 0 through 5 {
