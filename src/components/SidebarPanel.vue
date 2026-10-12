@@ -11,8 +11,8 @@
           v-for="c in invitations"
           :key="c.id"
           :channel="c"
-          @accept="accept(c)"
-          @decline="decline(c)"
+          @accept="chat.acceptInvite(c)"
+          @decline="chat.declineInvite(c)"
         />
 
         <div class="label">
@@ -32,8 +32,8 @@
           v-for="c in myChannels"
           :key="c.id"
           :channel="c"
-          :active="c.id === activeId"
-          @click="activeId = c.id"
+          :active="c.id === chat.activeId"
+          @click="chat.setActive(c.id)"
         />
       </nav>
 
@@ -63,7 +63,7 @@
     <CreateChannelDialog
       v-model="createOpen"
       :existing-names="existingNames"
-      @create="createChannel"
+      @create="chat.createChannel"
     />
 
     <ProfileDialog v-model="profileOpen" :user="me" />
@@ -72,7 +72,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { users, channels as mockChannels } from '../mock/data'
+import { useChatStore } from '../stores/chat'
 import ChannelItem from './ChannelItem.vue'
 import InvitationCard from './InvitationCard.vue'
 import CreateChannelDialog from './CreateChannelDialog.vue'
@@ -82,30 +82,14 @@ import ProfileDialog from './ProfileDialog.vue'
 // https://www.flaticon.com/free-icons/rubber-duck
 import logo from '../assets/logo.png'
 
-const me = users[0]
+const chat = useChatStore()
+const me = chat.me
 
-const channels = ref([...mockChannels])
-
-const myChannels = computed(() => channels.value.filter((c) => !c.invited))
-const invitations = computed(() => channels.value.filter((c) => c.invited))
-const existingNames = computed(() => channels.value.map((c) => c.name))
-const activeId = ref(1)
+const myChannels = computed(() => chat.channels.filter((c) => !c.invited))
+const invitations = computed(() => chat.channels.filter((c) => c.invited))
+const existingNames = computed(() => chat.channels.map((c) => c.name))
 const createOpen = ref(false)
 const profileOpen = ref(false)
-
-function accept(channel) {
-  channel.invited = false
-}
-
-function decline(channel) {
-  channels.value = channels.value.filter((c) => c.id !== channel.id)
-}
-
-function createChannel({ name, type }) {
-  const id = Math.max(0, ...channels.value.map((c) => c.id)) + 1
-  channels.value.unshift({ id, name, type, adminId: me.id, unread: 0, invited: false })
-  activeId.value = id
-}
 </script>
 
 <style lang="scss" scoped>

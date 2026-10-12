@@ -86,8 +86,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { users, channels } from '../mock/data'
+import { ref, computed, watch } from 'vue'
+import { users } from '../mock/data'
+import { useChatStore } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
 import InviteDialog from './InviteDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
@@ -101,12 +102,12 @@ const emit = defineEmits(['close'])
 
 const widthPx = computed(() => props.width + 'px')
 
-const me = users[0]
-const channelId = 1
-const channel = computed(() => channels.find((c) => c.id === channelId))
+const chat = useChatStore()
+const me = chat.me
+const channel = computed(() => chat.activeChannel)
 
-const memberIds = ref([1, 2, 3, 4, 5])
-const invitedIds = ref([])
+const memberIds = computed(() => channel.value.memberIds)
+const invitedIds = computed(() => channel.value.invitedIds)
 const inviteOpen = ref(false)
 
 const order = { online: 0, dnd: 1, offline: 2 }
@@ -121,8 +122,8 @@ const invited = computed(() => users.filter((u) => invitedIds.value.includes(u.i
 const candidates = computed(() => users.filter((u) => !memberIds.value.includes(u.id)))
 
 const knownIds = computed(() => {
-  const ids = channels
-    .filter((c) => !c.invited && (c.memberIds ?? []).includes(me.id))
+  const ids = chat.channels
+    .filter((c) => !c.invited && c.memberIds.includes(me.id))
     .flatMap((c) => c.memberIds)
   return [...new Set(ids)].filter((id) => id !== me.id)
 })
@@ -131,10 +132,14 @@ const canInvite = computed(() => channel.value.type === 'public' || channel.valu
 const adminNick = computed(() => users.find((u) => u.id === channel.value.adminId)?.nickName)
 
 function invite(user) {
-  if (!invitedIds.value.includes(user.id)) invitedIds.value.push(user.id)
+  chat.inviteToActive(user)
 }
 
 const deniedShown = ref(false)
+
+watch(() => chat.activeId, () => {
+  deniedShown.value = false
+})
 
 const profileOpen = ref(false)
 const profileUser = ref(null)

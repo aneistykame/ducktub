@@ -34,8 +34,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { users, channels, messages } from '../mock/data'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { users } from '../mock/data'
+import { useChatStore } from '../stores/chat'
 import MessageBubble from './MessageBubble.vue'
 import CommandBar from './CommandBar.vue'
 import TypingIndicator from './TypingIndicator.vue'
@@ -47,15 +48,14 @@ defineProps({
 
 const emit = defineEmits(['toggle-members'])
 
-const me = users[0]
-const channelId = 1
+const chat = useChatStore()
+const me = chat.me
 const typing = { nick: 'ed', draft: 'I can bring dess' }
 
-const allMessages = ref([...messages])
 const messagesEl = ref(null)
 
-const channel = computed(() => channels.find((c) => c.id === channelId))
-const channelMessages = computed(() => allMessages.value.filter((m) => m.channelId === channelId))
+const channel = computed(() => chat.activeChannel)
+const channelMessages = computed(() => chat.activeMessages)
 const authorOf = (m) => users.find((u) => u.id === m.authorId)
 
 const items = computed(() =>
@@ -74,21 +74,12 @@ async function scrollToEnd() {
 function onSubmit(text) {
   if (text.startsWith('/')) return
 
-  const mentions = (text.match(/@\w+/g) || []).map((t) => t.slice(1))
-
-  allMessages.value.push({
-    id: Date.now(),
-    channelId,
-    authorId: me.id,
-    text,
-    time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-    mentions,
-  })
-
+  chat.sendMessage(text)
   scrollToEnd()
 }
 
 onMounted(scrollToEnd)
+watch(() => chat.activeId, scrollToEnd)
 </script>
 
 <style lang="scss" scoped>
