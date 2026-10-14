@@ -21,7 +21,21 @@ export const useChatStore = defineStore('chat', () => {
       kickedBy: {},
     })),
   )
-  const messages = ref([...mockMessages])
+
+  function makeHistory(channelId, authorIds, count) {
+    const texts = ['Morning!', 'Anyone seen the slides?', 'On it', 'Thanks!', 'Let’s sync later', 'Sounds good', 'Ducks are amazing', 'Quack']
+    return Array.from({ length: count }, (_, i) => ({
+      id: -(count - i),
+      channelId,
+      authorId: authorIds[i % authorIds.length],
+      text: `${texts[i % texts.length]} (#${i + 1})`,
+      time: `08:${String(i % 60).padStart(2, '0')}`,
+      mentions: [],
+    }))
+  }
+
+  const history = makeHistory(1, mockChannels.find((c) => c.id === 1).memberIds, 300)
+  const messages = ref([...history, ...mockMessages])
   const activeId = ref(1)
 
   const myChannels = computed(() =>

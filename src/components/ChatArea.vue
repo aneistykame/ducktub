@@ -14,7 +14,11 @@
       />
     </header>
 
-    <div ref="messagesEl" class="messages">
+    <div ref="messagesEl" class="messages" @scroll.passive="onScroll">
+      <div v-if="loading" class="row justify-center q-my-md">
+        <q-spinner color="secondary" size="28px" />
+      </div>
+
       <MessageBubble
         v-for="i in items"
         :key="i.m.id"
@@ -28,7 +32,7 @@
       />
     </div>
 
-    <TypingIndicator :nick="typing.nick" :draft="typing.draft" />
+    <TypingIndicator v-if="typing" :nick="typing.nick" :draft="typing.draft" />
 
     <CommandBar @submit="onSubmit" />
 
@@ -52,7 +56,20 @@ defineProps({
 const emit = defineEmits(['toggle-members'])
 
 const chat = useChatStore()
-const typing = { nick: 'ed', draft: 'I can bring dess' }
+
+const typingByChannel = {
+  1: { nick: 'ed', draft: 'I can bring dess' },
+}
+
+const typing = computed(() => {
+  const t = typingByChannel[chat.activeId]
+  if (!t) return null
+
+  const user = chat.users.find((u) => u.nickName === t.nick)
+  if (!user || user.id === chat.me.id) return null
+
+  return chat.activeChannel.memberIds.includes(user.id) ? t : null
+})
 
 const messagesEl = ref(null)
 
@@ -68,13 +85,41 @@ const channel = computed(() => chat.activeChannel)
 const channelMessages = computed(() => chat.activeMessages)
 const authorOf = (m) => chat.users.find((u) => u.id === m.authorId)
 
+const PAGE = 30
+const TOP_OFFSET = 100
+const loaded = ref(PAGE)
+const loading = ref(false)
+
+const hasMore = computed(() => loaded.value < channelMessages.value.length)
+
+const visibleMessages = computed(() => channelMessages.value.slice(-loaded.value))
+
 const items = computed(() =>
-  channelMessages.value.map((m, i, arr) => ({
+  visibleMessages.value.map((m, i, arr) => ({
     m,
     first: i === 0 || arr[i - 1].authorId !== m.authorId,
     last: i === arr.length - 1 || arr[i + 1].authorId !== m.authorId,
   })),
 )
+
+function onScroll() {
+  const el = messagesEl.value
+  if (!el || loading.value || !hasMore.value) return
+  if (el.scrollTop > TOP_OFFSET) return
+
+  loading.value = true
+
+  setTimeout(async () => {
+    const heightBefore = el.scrollHeight
+    const topBefore = el.scrollTop
+
+    loaded.value += PAGE
+    await nextTick()
+
+    el.scrollTop = topBefore + (el.scrollHeight - heightBefore)
+    loading.value = false
+  }, 400)
+}
 
 async function scrollToEnd() {
   await nextTick()
@@ -85,11 +130,20 @@ function onSubmit(text) {
   if (text.startsWith('/')) return
 
   chat.sendMessage(text)
+  loaded.value++
   scrollToEnd()
 }
 
 onMounted(scrollToEnd)
-watch(() => chat.activeId, scrollToEnd)
+
+watch(
+  () => chat.activeId,
+  () => {
+    loaded.value = PAGE
+    loading.value = false
+    scrollToEnd()
+  },
+)
 </script>
 
 <style lang="scss" scoped>
