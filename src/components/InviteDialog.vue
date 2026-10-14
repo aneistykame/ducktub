@@ -14,7 +14,7 @@
         placeholder="Search by name or nickname"
       />
 
-      <div v-if="shown.length" class="section">Results</div>
+      <div v-if="shown.length" class="section">{{ heading }}</div>
 
       <ul v-if="shown.length" class="list">
         <li v-for="u in shown" :key="u.id" class="row">
@@ -22,18 +22,22 @@
           <div class="info">
             <div class="name">{{ u.nickName }}</div>
             <div class="real">{{ u.firstName }} {{ u.lastName }}</div>
+            <div v-if="warning(u)" class="warn" :class="{ banned: isBanned(u) }">
+              <q-icon :name="isBanned(u) ? 'block' : 'warning'" size="12px" />
+              {{ warning(u) }}
+            </div>
           </div>
           <q-btn
             rounded
             no-caps
             size="sm"
-            :flat="isInvited(u)"
-            :unelevated="!isInvited(u)"
-            :color="isInvited(u) ? undefined : 'secondary'"
-            :text-color="isInvited(u) ? 'white' : 'dark'"
+            :flat="btnDisabled(u)"
+            :unelevated="!btnDisabled(u)"
+            :color="btnDisabled(u) ? undefined : 'secondary'"
+            :text-color="btnDisabled(u) ? 'white' : 'dark'"
             :icon="isInvited(u) ? 'check' : undefined"
-            :label="isInvited(u) ? 'Invited' : 'Invite'"
-            :disable="isInvited(u)"
+            :label="btnLabel(u)"
+            :disable="btnDisabled(u)"
             @click="emit('invite', u)"
           />
         </li>
@@ -55,7 +59,10 @@ const props = defineProps({
   channelName: String,
   candidates: Array,
   knownIds: { type: Array, default: () => [] },
-  invitedIds: Array,
+  invitedIds: { type: Array, default: () => [] },
+  bannedIds: { type: Array, default: () => [] },
+  kickedBy: { type: Object, default: () => ({}) },
+  isAdmin: Boolean,
 })
 
 const emit = defineEmits(['update:modelValue', 'invite'])
@@ -76,10 +83,16 @@ const words = computed(() => norm(search.value).split(/\s+/).filter(Boolean))
 const isSearching = computed(() => words.value.length > 0)
 
 const isKnown = (u) => props.knownIds.includes(u.id)
-const rank = (u) => (isKnown(u) ? 0 : 1)
+const isBanned = (u) => props.bannedIds.includes(u.id)
+const isInvited = (u) => props.invitedIds.includes(u.id)
+
+const rank = (u) => {
+  if (isBanned(u)) return 2
+  return isKnown(u) ? 0 : 1
+}
 
 const matches = computed(() => {
-  if (!isSearching.value) return props.candidates.filter(isKnown)
+  if (!isSearching.value) return props.candidates.filter((u) => isKnown(u) && !isBanned(u))
   return props.candidates.filter((u) => {
     const text = norm(`${u.nickName} ${u.firstName} ${u.lastName}`)
     return words.value.every((w) => text.includes(w))
@@ -93,7 +106,26 @@ const shown = computed(() => {
   return sorted.slice(0, isSearching.value ? MAX_RESULTS : MAX_SUGGESTED)
 })
 
-const isInvited = (u) => props.invitedIds.includes(u.id)
+const heading = computed(() => (isSearching.value ? 'Results' : 'From your other channels'))
+
+const kicksOf = (u) => (props.kickedBy[u.id] ?? []).length
+
+const warning = (u) => {
+  if (isBanned(u)) {
+    return props.isAdmin ? 'Banned from this channel' : 'Banned, only the admin can restore access'
+  }
+  const kicks = kicksOf(u)
+  if (!kicks) return ''
+  return `Kicked out ${kicks} ${kicks === 1 ? 'time' : 'times'} before`
+}
+
+const btnLabel = (u) => {
+  if (isInvited(u)) return 'Invited'
+  if (isBanned(u)) return props.isAdmin ? 'Restore' : 'Banned'
+  return 'Invite'
+}
+
+const btnDisabled = (u) => isInvited(u) || (isBanned(u) && !props.isAdmin)
 
 function close() {
   emit('update:modelValue', false)
@@ -159,15 +191,22 @@ watch(
   opacity: 0.7;
 }
 
-.more {
-  padding: 4px 4px 0;
-  font-size: 12px;
-  opacity: 0.7;
-}
-
 .empty {
   padding: 16px 4px;
   text-align: center;
   opacity: 0.7;
+}
+
+.warn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: $warning;
+}
+
+.warn.banned {
+  color: $negative;
 }
 </style>

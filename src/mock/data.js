@@ -23,8 +23,8 @@ export const channels = [
   { id: 1, name: 'the-pond', type: 'public', adminId: 3, unread: 0, invited: false, lastActivity: ago(5), memberIds: [1, 2, 3, 4, 5] },
   { id: 2, name: 'kitchen', type: 'public', adminId: 1, unread: 2, invited: false, lastActivity: ago(60), memberIds: [1, 2, 3, 6] },
   { id: 3, name: 'school', type: 'public', adminId: 2, unread: 0, invited: false, lastActivity: ago(180), memberIds: [1, 2, 7] },
-  { id: 4, name: 'hideout', type: 'private', adminId: 1, unread: 0, invited: false, lastActivity: ago(1440), memberIds: [1, 8] },
-  { id: 5, name: 'secret-lake', type: 'private', adminId: 4, unread: 0, invited: true, lastActivity: ago(2880), memberIds: [4] },
+  { id: 4, name: 'hideout', type: 'private', adminId: 1, unread: 0, invited: false, lastActivity: ago(1440), memberIds: [1, 8, 6] },
+  { id: 5, name: 'secret-lake', type: 'private', adminId: 4, unread: 0, invited: true, lastActivity: ago(2880), memberIds: [4, 6] },
 ]
 
 export const messages = [

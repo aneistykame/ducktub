@@ -9,7 +9,7 @@
         round
         dense
         icon="person_add"
-        :class="{ muted: !canInvite }"
+        :class="{ muted: !chat.canInviteToActive }"
         aria-label="Invite member"
         @click="onInviteClick"
       />
@@ -24,10 +24,10 @@
       />
     </header>
 
-    <div v-if="deniedShown" class="note">
-      <q-icon name="lock" size="16px" />
-      <span>Only the admin ({{ adminNick }}) can invite people to this private channel.</span>
-      <q-btn flat round dense size="sm" icon="close" aria-label="Dismiss" @click="deniedShown = false" />
+    <div v-if="notice" class="note">
+      <q-icon name="info" size="16px" />
+      <span>{{ notice }}</span>
+      <q-btn flat round dense size="sm" icon="close" aria-label="Dismiss" @click="notice = ''" />
     </div>
 
     <ul class="list">
@@ -49,6 +49,11 @@
           </div>
           <div class="state">{{ statusLabel[u.status] }}</div>
         </div>
+
+        <span v-if="chat.activeIsPublic && kicksOf(u)" class="kicks">
+          kicked {{ kicksOf(u) }}/{{ KICKS_TO_BAN }}
+          <q-tooltip>{{ kicksText(u) }}</q-tooltip>
+        </span>
       </li>
 
       <li v-if="invited.length" class="divider"></li>
@@ -77,7 +82,10 @@
       :channel-name="channel.name"
       :candidates="candidates"
       :known-ids="knownIds"
-      :invited-ids="invitedIds"
+      :invited-ids="channel.invitedIds"
+      :banned-ids="channel.bannedIds"
+      :kicked-by="channel.kickedBy"
+      :is-admin="chat.activeIsAdmin"
       @invite="invite"
     />
 
@@ -87,7 +95,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useChatStore } from '../stores/chat'
+import { useChatStore, KICKS_TO_BAN } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
 import InviteDialog from './InviteDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
@@ -104,38 +112,50 @@ const widthPx = computed(() => props.width + 'px')
 const chat = useChatStore()
 const channel = computed(() => chat.activeChannel)
 
-const memberIds = computed(() => channel.value.memberIds)
-const invitedIds = computed(() => channel.value.invitedIds)
 const inviteOpen = ref(false)
+const notice = ref('')
 
 const order = { online: 0, dnd: 1, offline: 2 }
 const statusLabel = { online: 'Floating', dnd: 'Do Not Splash', offline: 'Drying Off' }
 
 const members = computed(() =>
   chat.users
-    .filter((u) => memberIds.value.includes(u.id))
+    .filter((u) => channel.value.memberIds.includes(u.id))
     .sort((a, b) => order[a.status] - order[b.status]),
 )
-const invited = computed(() => chat.users.filter((u) => invitedIds.value.includes(u.id)))
-const candidates = computed(() => chat.users.filter((u) => !memberIds.value.includes(u.id)))
+const invited = computed(() => chat.users.filter((u) => channel.value.invitedIds.includes(u.id)))
+const candidates = computed(() => chat.users.filter((u) => !channel.value.memberIds.includes(u.id)))
 
 const knownIds = computed(() => {
   const ids = chat.myChannels.flatMap((c) => c.memberIds)
   return [...new Set(ids)].filter((id) => id !== chat.me.id)
 })
 
-const canInvite = computed(() => channel.value.type === 'public' || channel.value.adminId === chat.me.id)
 const adminNick = computed(() => chat.users.find((u) => u.id === channel.value.adminId)?.nickName)
+
+const kicksOf = (u) => (channel.value.kickedBy[u.id] ?? []).length
+
+const kicksText = (u) =>
+  `${kicksOf(u)} of ${KICKS_TO_BAN} members have kicked ${u.nickName} out of this channel. At ${KICKS_TO_BAN} the ban is permanent.`
 
 function invite(user) {
   chat.inviteToActive(user)
 }
 
-const deniedShown = ref(false)
+function onInviteClick() {
+  if (chat.canInviteToActive) {
+    inviteOpen.value = true
+  } else {
+    notice.value = `Only the admin (${adminNick.value}) can invite people to this private channel.`
+  }
+}
 
-watch(() => chat.activeId, () => {
-  deniedShown.value = false
-})
+watch(
+  () => chat.activeId,
+  () => {
+    notice.value = ''
+  },
+)
 
 const profileOpen = ref(false)
 const profileUser = ref(null)
@@ -143,14 +163,6 @@ const profileUser = ref(null)
 function openProfile(user) {
   profileUser.value = user
   profileOpen.value = true
-}
-
-function onInviteClick() {
-  if (canInvite.value) {
-    inviteOpen.value = true
-  } else {
-    deniedShown.value = !deniedShown.value
-  }
 }
 </script>
 
@@ -191,14 +203,18 @@ function onInviteClick() {
 
 .note {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   margin: 0 16px 8px;
-  padding: 8px 12px;
+  padding: 8px 8px 8px 12px;
   border-radius: 12px;
   background: $dark;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.note span {
+  flex: 1;
 }
 
 .list {
@@ -227,6 +243,11 @@ function onInviteClick() {
   opacity: 0.55;
 }
 
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
 .divider {
   height: 1px;
   margin: 12px 10px 8px;
@@ -243,6 +264,15 @@ function onInviteClick() {
 .state {
   font-size: 12px;
   opacity: 0.7;
+}
+
+.kicks {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .muted {

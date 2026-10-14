@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { users as mockUsers, channels as mockChannels, messages as mockMessages } from '../mock/data'
 export const DEMO_PASSWORD = 'quack123'
+export const KICKS_TO_BAN = 3
 
 export const useChatStore = defineStore('chat', () => {
   const users = ref(mockUsers.map((u) => ({ ...u })))
@@ -16,6 +17,8 @@ export const useChatStore = defineStore('chat', () => {
       ...c,
       memberIds: [...(c.memberIds ?? [])],
       invitedIds: invited ? [mockUsers[0].id] : [],
+      bannedIds: [],
+      kickedBy: {},
     })),
   )
   const messages = ref([...mockMessages])
@@ -32,6 +35,10 @@ export const useChatStore = defineStore('chat', () => {
 
   const activeChannel = computed(() => myChannels.value.find((c) => c.id === activeId.value))
   const activeMessages = computed(() => messages.value.filter((m) => m.channelId === activeId.value))
+
+  const activeIsPublic = computed(() => activeChannel.value?.type === 'public')
+  const activeIsAdmin = computed(() => !!me.value && activeChannel.value?.adminId === me.value.id)
+  const canInviteToActive = computed(() => activeIsPublic.value || activeIsAdmin.value)
 
   function setActive(id) {
     activeId.value = id
@@ -99,6 +106,8 @@ export const useChatStore = defineStore('chat', () => {
       lastActivity: Date.now(),
       memberIds: [me.value.id],
       invitedIds: [],
+      bannedIds: [],
+      kickedBy: {},
     })
     setActive(id)
   }
@@ -116,8 +125,57 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function inviteToActive(user) {
-    const ids = activeChannel.value.invitedIds
-    if (!ids.includes(user.id)) ids.push(user.id)
+    const channel = activeChannel.value
+    if (!channel || !canInviteToActive.value) return
+    if (channel.memberIds.includes(user.id)) return
+
+    if (channel.bannedIds.includes(user.id)) {
+      if (!activeIsAdmin.value) return
+      channel.bannedIds = channel.bannedIds.filter((id) => id !== user.id)
+      delete channel.kickedBy[user.id]
+    }
+
+    if (!channel.invitedIds.includes(user.id)) channel.invitedIds.push(user.id)
+  }
+
+  function canKick(userId) {
+    const channel = activeChannel.value
+    if (!channel || !channel.memberIds.includes(userId)) return false
+    if (userId === me.value.id || userId === channel.adminId) return false
+    return activeIsPublic.value || activeIsAdmin.value
+  }
+
+  function banFromActive(userId) {
+    const channel = activeChannel.value
+    if (!channel.bannedIds.includes(userId)) channel.bannedIds.push(userId)
+  }
+
+  // What a kick would do right now, so the UI text and the real behaviour never differ.
+  // 'remove' = private channel (admin only), 'ban' = public channel and I am the admin,
+  // 'kick' = public channel, the 3rd kick from different members becomes a permanent ban.
+  function kickPreview(userId) {
+    const kickers = activeChannel.value?.kickedBy[userId] ?? []
+    const counted = !!me.value && kickers.includes(me.value.id)
+    const kicks = kickers.length
+    const next = counted ? kicks : kicks + 1
+
+    if (!activeIsPublic.value) return { action: 'remove', kicks, next, counted, bans: false }
+    if (activeIsAdmin.value) return { action: 'ban', kicks, next, counted, bans: true }
+    return { action: 'kick', kicks, next, counted, bans: next >= KICKS_TO_BAN }
+  }
+
+  function kickFromActive(userId) {
+    if (!canKick(userId)) return
+    const channel = activeChannel.value
+    const { action, bans } = kickPreview(userId)
+
+    channel.memberIds = channel.memberIds.filter((id) => id !== userId)
+
+    if (action === 'kick') {
+      const kickers = channel.kickedBy[userId] ?? []
+      if (!kickers.includes(me.value.id)) channel.kickedBy[userId] = [...kickers, me.value.id]
+    }
+    if (bans) banFromActive(userId)
   }
 
   function setStatus(status) {
@@ -148,6 +206,9 @@ export const useChatStore = defineStore('chat', () => {
     activeId,
     activeChannel,
     activeMessages,
+    activeIsPublic,
+    activeIsAdmin,
+    canInviteToActive,
     setActive,
     login,
     register,
@@ -157,6 +218,9 @@ export const useChatStore = defineStore('chat', () => {
     createChannel,
     leaveChannel,
     inviteToActive,
+    canKick,
+    kickPreview,
+    kickFromActive,
     setStatus,
     sendMessage,
   }
