@@ -1,5 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
+    <Notification />
+
     <q-btn
       v-if="!isLarge && !drawer"
       class="menu-btn"
@@ -24,6 +26,7 @@
 import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import SidebarPanel from '../components/SidebarPanel.vue'
+import Notification from '../components/Notification.vue'
 
 const $q = useQuasar()
 

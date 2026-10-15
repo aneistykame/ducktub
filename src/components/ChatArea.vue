@@ -37,6 +37,11 @@
     <CommandBar @submit="onSubmit" />
 
     <ProfileDialog v-model="profileOpen" :user="profileUser" />
+
+    <div class="simulate">
+      <q-btn flat no-caps label="Simulate message" @click="simulate(false)" />
+      <q-btn flat no-caps label="Simulate mention" @click="simulate(true)" />
+    </div>
   </main>
 </template>
 
@@ -47,6 +52,7 @@ import MessageBubble from './MessageBubble.vue'
 import CommandBar from './CommandBar.vue'
 import TypingIndicator from './TypingIndicator.vue'
 import ProfileDialog from './ProfileDialog.vue'
+import { requestNotificationPermission } from '../utils/notifications'
 
 defineProps({
   membersOpen: Boolean,
@@ -134,6 +140,25 @@ function onSubmit(text) {
   scrollToEnd()
 }
 
+function simulate(withMention) {
+  const ed = chat.users.find((u) => u.nickName === 'ed')
+  const target =
+    chat.myChannels.find((c) => c.id !== chat.activeId && c.memberIds.includes(ed.id)) ??
+    chat.activeChannel
+
+  requestNotificationPermission()
+
+  setTimeout(() => {
+    chat.receiveMessage({
+      channelId: target.id,
+      authorId: ed.id,
+      text: withMention
+        ? `Hey @${chat.me.nickName}, are you coming to the meeting later today?`
+        : 'Anyone seen the latest slides?',
+    })
+  }, 3000)
+}
+
 onMounted(scrollToEnd)
 
 watch(
@@ -181,5 +206,11 @@ watch(
   min-height: 0;
   overflow-y: auto;
   padding: 8px 24px 16px;
+}
+
+.simulate {
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 8px;
 }
 </style>

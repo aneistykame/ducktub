@@ -45,7 +45,7 @@ export const messages = [
   // kitchen
   { id: 13, channelId: 2, authorId: 2, text: 'Who is cooking tonight?', time: '14:02', mentions: [] },
   { id: 14, channelId: 2, authorId: 3, text: '@pip it is your turn, a promise is a promise!', time: '14:03', mentions: ['pip'] },
-  { id: 15, channelId: 2, authorId: 1, text: 'Fine, fine. Pasta it is.', time: '14:05', mentions: [] },
+  { id: 15, channelId: 2, authorId: 2, text: 'Yeah!', time: '14:05', mentions: [] },
 
   // school
   { id: 16, channelId: 3, authorId: 2, text: 'The project deadline is on the 6th of December.', time: '08:50', mentions: [] },

@@ -2,8 +2,22 @@
   <div class="item" :class="{ active, 'menu-open': menuOpen }">
     <q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="20px" />
     <span class="name">{{ channel.name }}</span>
-    <span v-if="channel.unread" class="badge">{{ channel.unread }}</span>
-
+    <span v-if="channel.mentionCount || channel.unread" class="badges">
+      <span
+        v-if="channel.mentionCount"
+        class="badge mention"
+        :aria-label="`${channel.mentionCount} mentions`"
+        :title="`${channel.mentionCount} mentions`"
+      >
+        <q-icon name="alternate_email" size="12px" />{{ channel.mentionCount }}
+      </span>
+      <span
+        v-if="channel.unread"
+        class="badge"
+        :aria-label="`${channel.unread} unread messages`"
+        :title="`${channel.unread} unread messages`"
+      >{{ channel.unread }}</span>
+    </span>
     <button
       type="button"
       class="more"
@@ -67,12 +81,31 @@ const menuOpen = ref(false)
   font-weight: 600;
 }
 
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .badge {
-  background: $secondary;
-  color: $text-dark;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
   border-radius: 999px;
-  padding: 0 8px;
+  background: rgba($text-light, 0.3);
+  color: $text-dark;
   font-size: 12px;
+  font-weight: 700;
+}
+
+.badge.mention {
+  gap: 1px;
+  background: $secondary;
+  color: $dark;
+  font-weight: 900;
 }
 
 .more {
@@ -134,27 +167,27 @@ const menuOpen = ref(false)
   color: $qt-ink;
   font-family: $qt-font;
   box-shadow: $qt-shadow-menu, $qt-surface-ring;
+}
 
-  .q-list {
-    padding: 0;
-  }
+.q-list {
+  padding: 0;
+}
 
-  .channel-menu-row {
-    gap: 12px;
-    align-items: center;
-    min-height: $qt-touch;
-    padding: 6px 14px;
+.channel-menu-row {
+  gap: 12px;
+  align-items: center;
+  min-height: $qt-touch;
+  padding: 6px 14px;
+  border-radius: $qt-radius-pill;
+  font-size: 14px;
+  font-weight: 800;
+
+  .q-focus-helper {
     border-radius: $qt-radius-pill;
-    font-size: 14px;
-    font-weight: 800;
-
-    .q-focus-helper {
-      border-radius: $qt-radius-pill;
-    }
   }
+}
 
-  .channel-menu-row.danger {
-    color: $qt-fail-ink;
-  }
+.channel-menu-row.danger {
+  color: $qt-fail-ink;
 }
 </style>

@@ -48,6 +48,23 @@
 
         <template v-if="profile">
           <li class="divider" role="separator"></li>
+          <q-item
+            clickable
+            role="menuitemcheckbox"
+            :aria-checked="chat.notifyOnlyMentions ? 'true' : 'false'"
+            class="status-row"
+            @click="toggleMentions"
+          >
+            <q-icon name="alternate_email" size="18px" class="row-icon" />
+            <span class="label">Only mentions</span>
+            <q-toggle
+              :model-value="chat.notifyOnlyMentions"
+              color="secondary"
+              dense
+              class="toggle-passive"
+              tabindex="-1"
+            />
+          </q-item>
           <q-item v-close-popup clickable role="menuitem" class="status-row" @click="emit('open-profile')">
             <q-icon name="person_outline" size="18px" class="row-icon" />
             <span class="label">Your profile</span>
@@ -62,6 +79,7 @@
 import { ref, computed } from 'vue'
 import { useChatStore } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
+import { requestNotificationPermission } from '../utils/notifications'
 
 defineProps({
   profile: Boolean,
@@ -79,6 +97,11 @@ const status = {
   offline: { label: 'Drying Off', hint: 'Offline' }
 }
 const current = computed(() => status[chat.me.status])
+
+function toggleMentions() {
+  chat.notifyOnlyMentions = !chat.notifyOnlyMentions
+  requestNotificationPermission()
+}
 </script>
 
 <style lang="scss" scoped>
@@ -251,6 +274,10 @@ const current = computed(() => status[chat.me.status])
   .row-icon {
     width: 12px;
     color: $qt-ink-quiet;
+  }
+
+  .toggle-passive {
+    pointer-events: none;
   }
 
   .divider {

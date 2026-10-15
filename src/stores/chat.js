@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { users as mockUsers, channels as mockChannels, messages as mockMessages } from '../mock/data'
+import { showMessageNotification } from '../utils/notifications'
 export const DEMO_PASSWORD = 'quack123'
 export const KICKS_TO_BAN = 3
 
@@ -19,23 +20,10 @@ export const useChatStore = defineStore('chat', () => {
       invitedIds: invited ? [mockUsers[0].id] : [],
       bannedIds: [],
       kickedBy: {},
+      mentionCount: 0,
     })),
   )
-
-  function makeHistory(channelId, authorIds, count) {
-    const texts = ['Morning!', 'Anyone seen the slides?', 'On it', 'Thanks!', 'Let’s sync later', 'Sounds good', 'Ducks are amazing', 'Quack']
-    return Array.from({ length: count }, (_, i) => ({
-      id: -(count - i),
-      channelId,
-      authorId: authorIds[i % authorIds.length],
-      text: `${texts[i % texts.length]} (#${i + 1})`,
-      time: `08:${String(i % 60).padStart(2, '0')}`,
-      mentions: [],
-    }))
-  }
-
-  const history = makeHistory(1, mockChannels.find((c) => c.id === 1).memberIds, 300)
-  const messages = ref([...history, ...mockMessages])
+  const messages = ref([...mockMessages])
   const activeId = ref(1)
 
   const myChannels = computed(() =>
@@ -57,7 +45,10 @@ export const useChatStore = defineStore('chat', () => {
   function setActive(id) {
     activeId.value = id
     const channel = channels.value.find((c) => c.id === id)
-    if (channel) channel.unread = 0
+    if (channel) {
+      channel.unread = 0
+      channel.mentionCount = 0
+    }
   }
 
   function openFirstChannel() {
@@ -117,6 +108,7 @@ export const useChatStore = defineStore('chat', () => {
       type,
       adminId: me.value.id,
       unread: 0,
+      mentionCount: 0,
       lastActivity: Date.now(),
       memberIds: [me.value.id],
       invitedIds: [],
@@ -164,9 +156,6 @@ export const useChatStore = defineStore('chat', () => {
     if (!channel.bannedIds.includes(userId)) channel.bannedIds.push(userId)
   }
 
-  // What a kick would do right now, so the UI text and the real behaviour never differ.
-  // 'remove' = private channel (admin only), 'ban' = public channel and I am the admin,
-  // 'kick' = public channel, the 3rd kick from different members becomes a permanent ban.
   function kickPreview(userId) {
     const kickers = activeChannel.value?.kickedBy[userId] ?? []
     const counted = !!me.value && kickers.includes(me.value.id)
@@ -210,6 +199,47 @@ export const useChatStore = defineStore('chat', () => {
     activeChannel.value.lastActivity = Date.now()
   }
 
+  const notifyOnlyMentions = ref(false)
+
+  function shouldNotify(message) {
+    if (!me.value || me.value.status !== 'online') return false
+    if (message.authorId === me.value.id) return false
+    if (notifyOnlyMentions.value && !message.mentions.includes(me.value.nickName)) return false
+    return true
+  }
+
+  function receiveMessage({ channelId, authorId, text }) {
+    const message = {
+      id: Date.now(),
+      channelId,
+      authorId,
+      text,
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      mentions: (text.match(/@\w+/g) || []).map((t) => t.slice(1)),
+    }
+    messages.value.push(message)
+
+    const mentionsMe = !!me.value && message.mentions.includes(me.value.nickName)
+
+    const channel = channels.value.find((c) => c.id === channelId)
+    if (channel) {
+      channel.lastActivity = Date.now()
+      if (channelId !== activeId.value) {
+        channel.unread = (channel.unread ?? 0) + 1
+        if (mentionsMe) channel.mentionCount = (channel.mentionCount ?? 0) + 1
+      }
+    }
+
+    if (shouldNotify(message)) {
+      showMessageNotification(users.value.find((u) => u.id === authorId), message, {
+        channel,
+        active: channelId === activeId.value,
+        mention: mentionsMe,
+        onOpen: () => setActive(channelId),
+      })
+    }
+  }
+
   return {
     me,
     isLoggedIn,
@@ -237,5 +267,7 @@ export const useChatStore = defineStore('chat', () => {
     kickFromActive,
     setStatus,
     sendMessage,
+    receiveMessage,
+    notifyOnlyMentions,
   }
 })
