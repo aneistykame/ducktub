@@ -154,7 +154,7 @@ function simulate(withMention) {
       authorId: ed.id,
       text: withMention
         ? `Hey @${chat.me.nickName}, are you coming to the meeting later today?`
-        : 'Anyone seen the latest slides?',
+        : 'Ducks <3',
     })
   }, 3000)
 }
@@ -191,6 +191,18 @@ watch(
   font-weight: 700;
 }
 
+.title {
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  padding: 15px 0;
+}
+
+.members-btn {
+  flex: none;
+  margin-left: auto;
+}
+
 @media (max-width: 1123px) {
   .chat-header {
     padding-left: 64px;
@@ -206,6 +218,8 @@ watch(
   min-height: 0;
   overflow-y: auto;
   padding: 8px 24px 16px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .simulate {

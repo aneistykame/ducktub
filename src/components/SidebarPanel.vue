@@ -104,16 +104,19 @@ function askLeave(channel) {
 
 <style lang="scss" scoped>
 .sidebar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
   height: 100%;
+  overflow: hidden;
   color: $text-light;
 }
 
 .body {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   background: $dark;
 }
 
@@ -121,6 +124,7 @@ function askLeave(channel) {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   min-height: 64px;
   padding: 0 16px;
   font-size: 24px;
@@ -128,12 +132,15 @@ function askLeave(channel) {
 }
 
 .logo {
+  flex: none;
   width: 44px;
   height: 44px;
 }
 
 .middle {
   flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 0 25px 0 12px;
 }
@@ -170,13 +177,14 @@ function askLeave(channel) {
 }
 
 .bottom {
+  min-width: 0;
   padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid $qt-line;
 }
 
 .wave {
-  width: 24px;
-  flex: none;
+  display: block;
+  width: 100%;
   height: 100%;
 }
 

@@ -11,7 +11,7 @@
         filled
         dense
         label="Channel name"
-        maxlength="20"
+        maxlength="30"
         counter
         autofocus
         :error="!!errorMessage"

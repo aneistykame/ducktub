@@ -88,8 +88,11 @@ function open(t) {
 }
 
 .head {
+  overflow: hidden;
   font-size: 16px;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .in {
@@ -102,6 +105,7 @@ function open(t) {
   display: -webkit-box;
   margin-top: 2px;
   overflow: hidden;
+  overflow-wrap: anywhere;
   font-size: 14px;
   line-height: 1.4;
   opacity: 0.92;

@@ -1,7 +1,19 @@
 <template>
   <div class="item" :class="{ active, 'menu-open': menuOpen }">
     <q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="20px" />
-    <span class="name">{{ channel.name }}</span>
+    <span ref="nameEl" class="name">
+      {{ channel.name }}
+      <q-tooltip
+        v-if="isTruncated"
+        class="channel-tooltip"
+        anchor="center right"
+        self="center left"
+        :offset="[8, 0]"
+        :delay="300"
+      >
+        {{ channel.name }}
+      </q-tooltip>
+    </span>
     <span v-if="channel.mentionCount || channel.unread" class="badges">
       <span
         v-if="channel.mentionCount"
@@ -42,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useChatStore } from '../stores/chat'
 
 const props = defineProps({
@@ -54,6 +66,25 @@ const emit = defineEmits(['leave'])
 const chat = useChatStore()
 const isAdmin = computed(() => props.channel.adminId === chat.me.id)
 const menuOpen = ref(false)
+
+const nameEl = ref(null)
+const isTruncated = ref(false)
+let observer = null
+
+function checkTruncated() {
+  const el = nameEl.value
+  isTruncated.value = !!el && el.scrollWidth > el.clientWidth
+}
+
+onMounted(() => {
+  checkTruncated()
+  observer = new ResizeObserver(checkTruncated)
+  observer.observe(nameEl.value)
+})
+
+onBeforeUnmount(() => observer?.disconnect())
+
+watch(() => props.channel.name, () => nextTick(checkTruncated))
 </script>
 
 <style lang="scss" scoped>
@@ -70,6 +101,7 @@ const menuOpen = ref(false)
 .name {
   flex: 1;
   min-width: 0;
+  //max-width: 70px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -189,5 +221,19 @@ const menuOpen = ref(false)
 
 .channel-menu-row.danger {
   color: $qt-fail-ink;
+}
+
+.q-tooltip.channel-tooltip {
+  max-width: 260px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: $qt-surface;
+  color: $qt-ink;
+  font-family: $qt-font;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  box-shadow: $qt-shadow-menu, $qt-surface-ring;
 }
 </style>

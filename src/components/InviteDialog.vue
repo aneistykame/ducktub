@@ -2,8 +2,8 @@
   <q-dialog :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
     <q-card class="dialog">
       <header class="dialog-header">
-        <span>Invite to {{ channelName }}</span>
-        <q-btn flat round dense icon="close" aria-label="Close" @click="close" />
+        <span class="dialog-title">Invite to {{ channelName }}</span>
+        <q-btn class="close-btn" flat round dense icon="close" aria-label="Close" @click="close" />
       </header>
 
       <q-input
@@ -17,17 +17,18 @@
       <div v-if="shown.length" class="section">{{ heading }}</div>
 
       <ul v-if="shown.length" class="list">
-        <li v-for="u in shown" :key="u.id" class="row">
-          <UserAvatar :user="u" :status="u.status" small />
+        <li v-for="u in shown" :key="u.id" class="user-row">
+          <UserAvatar class="avatar" :user="u" :status="u.status" small />
           <div class="info">
             <div class="name">{{ u.nickName }}</div>
             <div class="real">{{ u.firstName }} {{ u.lastName }}</div>
             <div v-if="warning(u)" class="warn" :class="{ banned: isBanned(u) }">
               <q-icon :name="isBanned(u) ? 'block' : 'warning'" size="12px" />
-              {{ warning(u) }}
+              <span class="warn-text">{{ warning(u) }}</span>
             </div>
           </div>
           <q-btn
+            class="invite-btn"
             rounded
             no-caps
             size="sm"
@@ -152,10 +153,24 @@ watch(
 .dialog-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 12px;
   font-size: 18px;
   font-weight: 700;
+}
+
+.dialog-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close-btn,
+.invite-btn,
+.avatar {
+  flex: none;
 }
 
 .section {
@@ -171,7 +186,7 @@ watch(
   padding: 0;
 }
 
-.row {
+.user-row {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -180,6 +195,15 @@ watch(
 
 .info {
   flex: 1;
+  min-width: 0;
+}
+
+.name,
+.real,
+.warn-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .name {
@@ -204,6 +228,10 @@ watch(
   font-size: 12px;
   font-weight: 700;
   color: $warning;
+
+  .q-icon {
+    flex: none;
+  }
 }
 
 .warn.banned {
