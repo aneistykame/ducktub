@@ -201,10 +201,6 @@ watch(() => props.channel.name, () => nextTick(checkTruncated))
   box-shadow: $qt-shadow-menu, $qt-surface-ring;
 }
 
-.q-list {
-  padding: 0;
-}
-
 .channel-menu-row {
   gap: 12px;
   align-items: center;
@@ -213,7 +209,9 @@ watch(() => props.channel.name, () => nextTick(checkTruncated))
   border-radius: $qt-radius-pill;
   font-size: 14px;
   font-weight: 800;
-
+  .q-list {
+  padding: 0;
+  }
   .q-focus-helper {
     border-radius: $qt-radius-pill;
   }

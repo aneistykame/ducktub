@@ -144,6 +144,38 @@ export const useChatStore = defineStore('chat', () => {
     if (!channel.invitedIds.includes(user.id)) channel.invitedIds.push(user.id)
   }
 
+  // Results keep the channel name separate so the UI can shorten it
+  function inviteByNick(nick) {
+    const channel = activeChannel.value
+    const say = (ok, before, inChannel = false, after = '') => ({
+      ok,
+      before,
+      channel: inChannel ? channel.name : null,
+      after,
+      message: inChannel ? `${before}#${channel.name}${after}` : before,
+    })
+
+    const name = nick.replace(/^@/, '')
+    if (!name) return say(false, 'Usage: /invite nickName')
+
+    const user = users.value.find((u) => u.nickName.toLowerCase() === name.toLowerCase())
+    if (!user) return say(false, `No duck called @${name}`)
+    if (user.id === me.value.id) return say(false, 'You’re already in this tub')
+    if (channel.memberIds.includes(user.id)) return say(false, `@${user.nickName} is already in `, true)
+    if (!canInviteToActive.value) return say(false, 'Only the admin can invite people to this private channel')
+
+    const wasBanned = channel.bannedIds.includes(user.id)
+    if (wasBanned && !activeIsAdmin.value) {
+      return say(false, `@${user.nickName} is banned here. Only the admin can let them back in`)
+    }
+    if (channel.invitedIds.includes(user.id)) return say(false, `@${user.nickName} is already invited`)
+
+    inviteToActive(user)
+    return wasBanned
+      ? say(true, `Lifted the ban and invited @${user.nickName} to `, true)
+      : say(true, `Invited @${user.nickName} to `, true, '. Quack!')
+  }
+
   function canKick(userId) {
     const channel = activeChannel.value
     if (!channel || !channel.memberIds.includes(userId)) return false
@@ -262,6 +294,7 @@ export const useChatStore = defineStore('chat', () => {
     createChannel,
     leaveChannel,
     inviteToActive,
+    inviteByNick,
     canKick,
     kickPreview,
     kickFromActive,

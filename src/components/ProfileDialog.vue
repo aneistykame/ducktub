@@ -37,7 +37,7 @@
       <section v-if="showChannelBox" class="channel-box" aria-label="Channel actions">
         <div class="box-title">
           <q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="16px" />
-          {{ channel.name }}
+          <span class="box-name" :title="channel.name">{{ channel.name }}</span>
         </div>
 
         <p v-if="isMember && isChannelAdmin" class="note">
@@ -62,12 +62,15 @@
               @click="confirming = true"
             >
               <q-icon name="person_remove" size="18px" />
-              {{ triggerLabel }}
+              <span class="action-verb">{{ triggerVerb }}</span>
+              <ChannelName :name="channel.name" max="100%" />
             </button>
 
             <div v-else class="confirm" role="group" :aria-label="copy.title">
               <p class="confirm-title">{{ copy.title }}</p>
-              <p class="confirm-text">{{ copy.text }}</p>
+              <p class="confirm-text">
+                {{ copy.before }}<ChannelName :name="channel.name" />{{ copy.after }}
+              </p>
               <div class="confirm-actions">
                 <button v-autofocus type="button" class="btn ghost" @click="confirming = false">
                   Cancel
@@ -112,6 +115,7 @@ import { ref, computed, watch } from 'vue'
 import { useChatStore, KICKS_TO_BAN } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
 import StatusPicker from './StatusPicker.vue'
+import ChannelName from './ChannelName.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -139,22 +143,21 @@ const kicks = computed(() => (chat.activeIsPublic ? (channel.value?.kickedBy[pro
 const canKick = computed(() => !!props.user && chat.canKick(props.user.id))
 const preview = computed(() => (canKick.value ? chat.kickPreview(props.user.id) : null))
 
-const triggerLabel = computed(() => {
-  const name = `#${channel.value.name}`
-  if (preview.value.action === 'ban') return `Ban from ${name}`
-  if (preview.value.action === 'remove') return `Remove from ${name}`
-  return `Kick out of ${name}`
+const triggerVerb = computed(() => {
+  if (preview.value.action === 'ban') return 'Ban from'
+  if (preview.value.action === 'remove') return 'Remove from'
+  return 'Kick out of'
 })
 
 const copy = computed(() => {
   const p = preview.value
   const nick = props.user.nickName
-  const name = `#${channel.value.name}`
 
   if (p.action === 'remove') {
     return {
       title: `Remove ${nick}?`,
-      text: `${nick} will lose access to ${name}. You can invite them again later.`,
+      before: `${nick} will lose access to `,
+      after: '. You can invite them again later.',
       label: 'Remove',
     }
   }
@@ -162,7 +165,8 @@ const copy = computed(() => {
   if (p.action === 'ban') {
     return {
       title: `Ban ${nick}?`,
-      text: `${nick} will be removed and permanently banned from ${name}. Only you, as the admin, can restore their access.`,
+      before: `${nick} will be removed and permanently banned from `,
+      after: '. Only you, as the admin, can restore their access.',
       label: 'Ban',
     }
   }
@@ -178,7 +182,8 @@ const copy = computed(() => {
 
   return {
     title: `Kick ${nick} out?`,
-    text: `${nick} will be removed from ${name} but can be invited back. ${extra}`,
+    before: `${nick} will be removed from `,
+    after: ` but can be invited back. ${extra}`,
     label: p.bans ? 'Kick out and ban' : `Kick out (${p.next} of ${KICKS_TO_BAN})`,
   }
 })
@@ -308,9 +313,17 @@ dd {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
   font-size: 13px;
   font-weight: 700;
   opacity: 0.7;
+}
+
+.box-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .note {
@@ -369,6 +382,17 @@ dd {
   font-weight: 900;
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.15s ease;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.action-btn .q-icon,
+.action-verb {
+  flex: none;
+}
+
+.action-verb {
+  margin-right: -4px;
 }
 
 .action-btn:hover {

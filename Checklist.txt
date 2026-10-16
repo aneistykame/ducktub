@@ -4,16 +4,11 @@ vytvorenie komunikačného kanála (channel) cez príkazový riadok
     kanál môže vytvoriť ľubovolný používateľ cez príkaz /join channelName [private]
     do súkromného kanála môže pridávať/odoberať používateľov iba správca kanála cez príkazy /invite nickName a /revoke nickName
     do verejného kanála sa môže pridať ľubovolný používateľ cez príkaz /join channelName (ak kanál neexistuje, automaticky sa vytvorí)
-    do verejného kanála môže člen kanála pozvať iného používateľa príkazom /invite nickName
+    
     vo verejnom kanáli môže člen "vyhodiť" iného člena príkazom /kick nickName. ak tak spravia aspoň 3 členovia, používateľ má "trvalý" ban pre daný kanál. správca môže používateľa vyhodiť "natrvalo" kedykoľvek príkazom /kick nickName, alebo naopak "obnovit" používateľovi prístup do kanála cez príkaz /invite
     správca môže kanál zatvoriť/zrušiť príkazom /quit
 používateľ môže zrušiť svoje členstvo v kanáli príkazom /cancel, ak tak spraví správca kanála, kanál zaniká
 používateľ si môže pozrieť kompletnú históriu správ
-používateľ je informovaný o každej novej správe prostredníctvom notifikácie
-    notifikácia sa vystavuje iba ak aplikácia nie je v stave "visible" (pozrite quasar docu App Visibility)
-    notifikácia obsahuje časť zo správy a odosielateľa
-    používateľ si môže nastaviť, aby mu chodili notifikácie iba pre správy, ktoré sú mu adresované
-    ak je nastavený DND stav, neprichádzajú notifikácie
     ak je nastavený offline stav, neprichádzajú používateľovi správy, po prepnutí do online sú kanály automaticky aktualizované
 používateľ si môže pozrieť zoznam členov kanála (ak je tiež členom kanála) príkazom /list
 efektívny inifinite scroll
@@ -38,3 +33,9 @@ správcom kanála je používateľ, ktorý kanál vytvoril
 registrácia, prihlásenie a odhlásenie používateľa - používateľ má meno a priezvisko, nickName a email
 správu v kanáli je možné adresovať konkrétnemu používateľovi cez príkaz @nickname
     správa je zvýraznená danému používateľovi v zozname správ
+používateľ je informovaný o každej novej správe prostredníctvom notifikácie
+    notifikácia sa vystavuje iba ak aplikácia nie je v stave "visible" (pozrite quasar docu App Visibility)
+    notifikácia obsahuje časť zo správy a odosielateľa
+    používateľ si môže nastaviť, aby mu chodili notifikácie iba pre správy, ktoré sú mu adresované
+    ak je nastavený DND stav, neprichádzajú notifikácie
+do verejného kanála môže člen kanála pozvať iného používateľa príkazom /invite nickName

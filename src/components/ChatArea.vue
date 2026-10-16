@@ -2,7 +2,7 @@
   <main class="chat">
     <header class="chat-header">
       <q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="22px" />
-      <span class="title">{{ channel.name }}</span>
+      <span class="title" :title="channel.name">{{ channel.name }}</span>
       <q-btn
         v-if="showMembersButton"
         class="members-btn"
@@ -34,6 +34,15 @@
 
     <TypingIndicator v-if="typing" :nick="typing.nick" :draft="typing.draft" />
 
+    <transition name="toast">
+      <div v-if="feedback" :key="feedback.id" class="toast" :class="{ fail: !feedback.ok }" role="status">
+        <q-icon :name="feedback.ok ? 'check_circle' : 'error_outline'" size="18px" />
+        <span class="toast-text">
+          {{ feedback.before }}<ChannelName v-if="feedback.channel" :name="feedback.channel" />{{ feedback.after }}
+        </span>
+      </div>
+    </transition>
+
     <CommandBar @submit="onSubmit" />
 
     <ProfileDialog v-model="profileOpen" :user="profileUser" />
@@ -52,6 +61,7 @@ import MessageBubble from './MessageBubble.vue'
 import CommandBar from './CommandBar.vue'
 import TypingIndicator from './TypingIndicator.vue'
 import ProfileDialog from './ProfileDialog.vue'
+import ChannelName from './ChannelName.vue'
 import { requestNotificationPermission } from '../utils/notifications'
 
 defineProps({
@@ -132,8 +142,28 @@ async function scrollToEnd() {
   messagesEl.value.scrollTop = messagesEl.value.scrollHeight
 }
 
+const feedback = ref(null)
+let feedbackTimer = null
+
+function showFeedback(result) {
+  clearTimeout(feedbackTimer)
+  feedback.value = { ...result, id: Date.now() }
+  feedbackTimer = setTimeout(() => (feedback.value = null), 4000)
+}
+
+function runCommand(text) {
+  const [command, ...args] = text.slice(1).trim().split(/\s+/)
+
+  if (command.toLowerCase() === 'invite') {
+    showFeedback(chat.inviteByNick(args[0] ?? ''))
+  }
+}
+
 function onSubmit(text) {
-  if (text.startsWith('/')) return
+  if (text.startsWith('/')) {
+    runCommand(text)
+    return
+  }
 
   chat.sendMessage(text)
   loaded.value++
@@ -192,9 +222,11 @@ watch(
 }
 
 .title {
+  flex: 0 1 auto;
   min-width: 0;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 15px 0;
 }
 
@@ -220,6 +252,61 @@ watch(
   padding: 8px 24px 16px;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  max-width: calc(100% - 48px);
+  margin: 0 24px 10px;
+  padding: 8px 16px;
+  border-radius: $qt-radius-pill;
+  background: $qt-toast-bg;
+  color: $qt-toast-ink;
+  font-family: $qt-font;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: $qt-shadow-menu;
+}
+
+.toast .q-icon {
+  flex: none;
+}
+
+.toast-text {
+  min-width: 0;
+}
+
+.toast.fail {
+  background: $qt-fail-bg;
+  color: $qt-fail-ink;
+  box-shadow: inset 0 0 0 1.5px $qt-fail-ring;
+}
+
+.toast-enter-active {
+  transition: transform 0.22s $qt-ease-spring, opacity 0.22s ease;
+}
+
+.toast-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.toast-enter-from {
+  transform: translateY(12px) scale(0.9);
+  opacity: 0;
+}
+
+.toast-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter-active,
+  .toast-leave-active {
+    transition: none;
+  }
 }
 
 .simulate {
