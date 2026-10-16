@@ -6,8 +6,12 @@
       </span>
 
       <h2 id="leave-title" class="title">
-        {{ isAdmin ? 'Delete' : 'Leave' }}
-        <span class="channel"><q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="18px" />{{ channel.name }}</span>?
+        <span class="verb">{{ isAdmin ? 'Delete' : 'Leave' }}</span>
+        <span class="channel">
+          <q-icon :name="channel.type === 'private' ? 'lock' : 'tag'" size="18px" />
+          <span class="channel-name" :title="channel.name">{{ channel.name }}</span>
+        </span>
+        <span class="verb">?</span>
       </h2>
 
       <p id="leave-text" class="text">
@@ -87,16 +91,40 @@ function confirm() {
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   font-size: 21px;
   font-weight: 900;
   line-height: 1.25;
 }
 
+.verb {
+  flex: none;
+}
+
+.verb:first-child {
+  margin-right: 6px;
+}
+
 .channel {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  min-width: 0;
+}
+
+.channel .q-icon {
+  flex: none;
+}
+
+.channel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .text {
