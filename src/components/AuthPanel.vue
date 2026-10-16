@@ -46,11 +46,29 @@
       <div class="pair">
         <label class="field">
           <span class="field-label">First name</span>
-          <input v-model="regForm.firstName" placeholder="First name" class="input" type="text" autocomplete="given-name" required />
+          <input v-model="regForm.firstName" placeholder="First name" 
+            class="input"
+            :class="{ invalid: regErrors.firstName }"
+            type="text"
+            autocomplete="given-name"
+            maxlength="20"
+            required
+            :aria-invalid="!!regErrors.firstName"
+            @blur="touched.firstName = true" />
+          <span v-if="regErrors.firstName" class="field-error">{{ regErrors.firstName }}</span>
         </label>
         <label class="field">
           <span class="field-label">Last name</span>
-          <input v-model="regForm.lastName" placeholder="Last name" class="input" type="text" autocomplete="family-name" required />
+          <input v-model="regForm.lastName" placeholder="Last name"
+            class="input"
+            :class="{ invalid: regErrors.lastName }"
+            type="text"
+            autocomplete="family-name"
+            maxlength="20"
+            required
+            :aria-invalid="!!regErrors.lastName"
+            @blur="touched.lastName = true" />
+          <span v-if="regErrors.lastName" class="field-error">{{ regErrors.lastName }}</span>
         </label>
       </div>
       <label class="field">
@@ -64,6 +82,7 @@
           maxlength="20"
           required
           :aria-invalid="!!regErrors.nickName"
+          @blur="touched.nickName = true" 
         />
         <span v-if="regErrors.nickName" class="field-error">{{ regErrors.nickName }}</span>
       </label>
@@ -118,18 +137,23 @@ watch(() => regForm.nickName, () => (regTaken.nickName = ''))
 watch(() => regForm.email, () => (regTaken.email = ''))
 
 const canLogin = computed(() => !!loginForm.login.trim() && !!loginForm.password)
+const touched = reactive({})
 
 const regErrors = computed(() => {
   const errors = {}
   const nick = regForm.nickName.trim()
   const email = regForm.email.trim()
 
+  if (touched.firstName && !regForm.firstName.trim()) errors.firstName = 'First name is required'
+  if (touched.lastName && !regForm.lastName.trim()) errors.lastName = 'Last name is required'
+  if (touched.nickName && !nick) errors.nickName = 'Nickname is required'
+  
   if (nick && !/^[\w-]+$/.test(nick)) errors.nickName = 'Use only letters, numbers, - and _'
   else if (regTaken.nickName) errors.nickName = regTaken.nickName
 
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email'
   else if (regTaken.email) errors.email = regTaken.email
-
+  
   if (regForm.password && regForm.password.length < 6) errors.password = 'Use at least 6 characters'
   return errors
 })
