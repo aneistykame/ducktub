@@ -4,9 +4,16 @@
       <AuthPanel />
     </div>
 
-    <div v-else-if="!chat.activeChannel" class="empty">
-      <h2 class="empty-title">No tubs yet</h2>
-      <p class="empty-text">Create a channel or accept an invite to start quacking.</p>
+    <div v-else-if="!chat.activeChannel" class="empty no-tubs">
+      <div class="empty-body">
+        <h2 class="empty-title">No tubs yet</h2>
+        <p class="empty-text">
+          Create a channel, accept an invite, or type <code>/join channelName</code> to start quacking.
+        </p>
+      </div>
+
+      <CommandToast :feedback="feedback" />
+      <CommandBar @submit="onEmptySubmit" />
     </div>
 
     <template v-else>
@@ -40,10 +47,19 @@ import { useQuasar } from 'quasar'
 import MembersPanel from '../components/MembersPanel.vue'
 import ChatArea from '../components/ChatArea.vue'
 import AuthPanel from '../components/AuthPanel.vue'
+import CommandBar from '../components/CommandBar.vue'
+import CommandToast from '../components/CommandToast.vue'
+import { useCommands } from '../composables/useCommands'
 import { useChatStore } from '../stores/chat'
 
 const $q = useQuasar()
 const chat = useChatStore()
+
+const { feedback, run, say } = useCommands()
+
+function onEmptySubmit(text) {
+  if (!run(text)) say(false, 'Join a tub first. Try /join channelName')
+}
 
 const OVERLAY_BELOW = 900
 const FIXED_FROM = 1200
@@ -108,6 +124,31 @@ watch(mode, (m) => {
   .auth-slot {
     padding: 8px 16px 8px 64px;
   }
+}
+
+.no-tubs {
+  align-items: stretch;
+  padding: 0;
+}
+
+.empty-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+}
+
+.empty-text code {
+  padding: 1px 8px;
+  border-radius: $qt-radius-pill;
+  background: $qt-chip;
+  color: $qt-ink;
+  font-family: inherit;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .empty-title {

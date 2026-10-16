@@ -4,6 +4,15 @@ import { users as mockUsers, channels as mockChannels, messages as mockMessages 
 import { showMessageNotification } from '../utils/notifications'
 export const DEMO_PASSWORD = 'quack123'
 export const KICKS_TO_BAN = 3
+export const CHANNEL_NAME_MAX = 30
+
+const result = (ok, before, channel = null, after = '') => ({
+  ok,
+  before,
+  channel,
+  after,
+  message: channel ? `${before}#${channel}${after}` : before,
+})
 
 export const useChatStore = defineStore('chat', () => {
   const users = ref(mockUsers.map((u) => ({ ...u })))
@@ -120,7 +129,8 @@ export const useChatStore = defineStore('chat', () => {
 
   // Leaving as the admin deletes the channel for everyone
   function leaveChannel(channel) {
-    if (channel.adminId === me.value.id) {
+    const deleted = channel.adminId === me.value.id
+    if (deleted) {
       messages.value = messages.value.filter((m) => m.channelId !== channel.id)
       channels.value = channels.value.filter((c) => c.id !== channel.id)
     } else {
@@ -128,6 +138,7 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     if (activeId.value === channel.id) openFirstChannel()
+    return result(true, deleted ? 'Deleted ' : 'Left ', channel.name)
   }
 
   function inviteToActive(user) {
@@ -174,6 +185,38 @@ export const useChatStore = defineStore('chat', () => {
     return wasBanned
       ? say(true, `Lifted the ban and invited @${user.nickName} to `, true)
       : say(true, `Invited @${user.nickName} to `, true, '. Quack!')
+  }
+
+  function joinChannel(rawName, isPrivate = false) {
+    const name = rawName.replace(/^#/, '')
+    if (!name) return result(false, 'Usage: /join channelName [private]')
+    if (!/^[\w-]+$/.test(name)) return result(false, 'Channel names use only letters, numbers, - and _')
+    if (name.length > CHANNEL_NAME_MAX) {
+      return result(false, `Channel names can be at most ${CHANNEL_NAME_MAX} characters`)
+    }
+
+    const channel = channels.value.find((c) => c.name.toLowerCase() === name.toLowerCase())
+    if (!channel) {
+      createChannel({ name, type: isPrivate ? 'private' : 'public' })
+      return result(true, isPrivate ? 'Created the secret tub ' : 'Created ', name, '. Quack!')
+    }
+
+    const myId = me.value.id
+    if (channel.memberIds.includes(myId)) {
+      setActive(channel.id)
+      return result(true, 'You’re already in ', channel.name)
+    }
+    if (channel.bannedIds.includes(myId)) return result(false, 'You’re banned from ', channel.name)
+
+    const invited = channel.invitedIds.includes(myId)
+    if (channel.type === 'private' && !invited) {
+      return result(false, '', channel.name, ' is private. Ask the admin for an invite')
+    }
+
+    channel.invitedIds = channel.invitedIds.filter((id) => id !== myId)
+    channel.memberIds.push(myId)
+    setActive(channel.id)
+    return result(true, 'Joined ', channel.name, '. Quack!')
   }
 
   function canKick(userId) {
@@ -295,6 +338,7 @@ export const useChatStore = defineStore('chat', () => {
     leaveChannel,
     inviteToActive,
     inviteByNick,
+    joinChannel,
     canKick,
     kickPreview,
     kickFromActive,

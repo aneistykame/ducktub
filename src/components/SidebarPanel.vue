@@ -68,7 +68,7 @@
 
     <ProfileDialog v-model="profileOpen" :user="chat.me" />
 
-    <LeaveChannelDialog v-model="leaveOpen" :channel="leaving" />
+    <LeaveChannelDialog v-model="leaveOpen" :channel="leaving" @left="showFeedback" />
   </aside>
 </template>
 
@@ -81,6 +81,7 @@ import CreateChannelDialog from './CreateChannelDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
 import LeaveChannelDialog from './LeaveChannelDialog.vue'
 import StatusPicker from './StatusPicker.vue'
+import { useCommands } from '../composables/useCommands'
 
 // Logo: Rubber duck icons created by vectorsmarket15 - Flaticon
 // https://www.flaticon.com/free-icons/rubber-duck
@@ -95,6 +96,8 @@ const profileOpen = ref(false)
 
 const leaveOpen = ref(false)
 const leaving = ref(null)
+
+const { show: showFeedback } = useCommands()
 
 function askLeave(channel) {
   leaving.value = channel

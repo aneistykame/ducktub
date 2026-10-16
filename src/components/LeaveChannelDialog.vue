@@ -37,7 +37,7 @@ const props = defineProps({
   modelValue: Boolean,
   channel: Object,
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'left'])
 
 const chat = useChatStore()
 const isAdmin = computed(() => props.channel?.adminId === chat.me.id)
@@ -49,8 +49,9 @@ function close() {
 }
 
 function confirm() {
-  chat.leaveChannel(props.channel)
+  const result = chat.leaveChannel(props.channel)
   close()
+  emit('left', result)
 }
 </script>
 

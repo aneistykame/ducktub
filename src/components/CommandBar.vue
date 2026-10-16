@@ -4,7 +4,7 @@
       <input
         v-model="text"
         placeholder="Say quack or type /join, /invite, /list..."
-        @keydown.enter="send"
+        @keydown.enter.prevent="send"
       />
       <button class="send" @click="send">
         <q-icon name="send" />
