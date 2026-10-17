@@ -5,10 +5,10 @@ ak nie je kanál aktívny (nie je pridaná nová správa) viac ako 30 dní, kan�
 používateľ si môže pozrieť kompletnú históriu správ
     ak je nastavený offline stav, neprichádzajú používateľovi správy, po prepnutí do online sú kanály automaticky aktualizované
 používateľ si môže pozrieť zoznam členov kanála (ak je tiež členom kanála) príkazom /list
-efektívny inifinite scroll
 
 
-
+zmena channelu
+hladanie channelu
 
 -------------------------------------------------
 HOTOVO
@@ -36,6 +36,7 @@ používateľ odosiela správy a príkazy cez "príkazový riadok", ktorý je "f
 vytvorenie komunikačného kanála (channel) cez príkazový riadok
     do verejného kanála môže člen kanála pozvať iného používateľa príkazom /invite nickName
     do verejného kanála sa môže pridať ľubovolný používateľ cez príkaz /join channelName (ak kanál neexistuje, automaticky sa vytvorí)
-kanál môže vytvoriť ľubovolný používateľ cez príkaz /join channelName [private] 
 do súkromného kanála môže pridávať/odoberať používateľov iba správca kanála cez príkazy /invite nickName
 používateľ môže zrušiť svoje členstvo v kanáli príkazom /cancel, ak tak spraví správca kanála, kanál zaniká
+kanál môže vytvoriť ľubovolný používateľ cez príkaz /join channelName [private]
+efektívny inifinite scroll

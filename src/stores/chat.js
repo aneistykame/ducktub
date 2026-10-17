@@ -6,6 +6,9 @@ export const DEMO_PASSWORD = 'quack123'
 export const KICKS_TO_BAN = 3
 export const CHANNEL_NAME_MAX = 30
 
+let nextMessageId = Date.now()
+const nowTime = () => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
 const result = (ok, before, channel = null, after = '') => ({
   ok,
   before,
@@ -34,9 +37,14 @@ export const useChatStore = defineStore('chat', () => {
   )
   const messages = ref([...mockMessages])
   const activeId = ref(1)
+  const pending = ref([])
 
   const myChannels = computed(() =>
-    me.value ? channels.value.filter((c) => c.memberIds.includes(me.value.id)) : [],
+    me.value
+      ? channels.value
+        .filter((c) => c.memberIds.includes(me.value.id))
+        .sort((a, b) => (b.lastActivity ?? 0) - (a.lastActivity ?? 0))
+      : [],
   )
   const myInvitations = computed(() =>
     me.value
@@ -73,6 +81,7 @@ export const useChatStore = defineStore('chat', () => {
 
     meId.value = user.id
     user.status = 'online'
+    flushPending()
     openFirstChannel()
     return null
   }
@@ -103,6 +112,7 @@ export const useChatStore = defineStore('chat', () => {
   function acceptInvite(channel) {
     channel.invitedIds = channel.invitedIds.filter((id) => id !== me.value.id)
     if (!channel.memberIds.includes(me.value.id)) channel.memberIds.push(me.value.id)
+    channel.lastActivity = Date.now()
   }
 
   function declineInvite(channel) {
@@ -215,6 +225,7 @@ export const useChatStore = defineStore('chat', () => {
 
     channel.invitedIds = channel.invitedIds.filter((id) => id !== myId)
     channel.memberIds.push(myId)
+    channel.lastActivity = Date.now()
     setActive(channel.id)
     return result(true, 'Joined ', channel.name, '. Quack!')
   }
@@ -258,17 +269,18 @@ export const useChatStore = defineStore('chat', () => {
 
   function setStatus(status) {
     me.value.status = status
+    if (status !== 'offline') flushPending()
   }
 
   function sendMessage(text) {
     const mentions = (text.match(/@\w+/g) || []).map((t) => t.slice(1))
 
     messages.value.push({
-      id: Date.now(),
+      id: nextMessageId++,
       channelId: activeId.value,
       authorId: me.value.id,
       text,
-      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      time: nowTime(),
       mentions,
     })
     activeChannel.value.lastActivity = Date.now()
@@ -283,13 +295,12 @@ export const useChatStore = defineStore('chat', () => {
     return true
   }
 
-  function receiveMessage({ channelId, authorId, text }) {
-    const message = {
-      id: Date.now(),
+  function deliverMessage({ channelId, authorId, text, time }, { notify = true } = {}) {    const message = {
+      id: nextMessageId++,
       channelId,
       authorId,
       text,
-      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      time: time ?? nowTime(),
       mentions: (text.match(/@\w+/g) || []).map((t) => t.slice(1)),
     }
     messages.value.push(message)
@@ -305,7 +316,7 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
 
-    if (shouldNotify(message)) {
+    if (notify && shouldNotify(message)) {
       showMessageNotification(users.value.find((u) => u.id === authorId), message, {
         channel,
         active: channelId === activeId.value,
@@ -313,6 +324,20 @@ export const useChatStore = defineStore('chat', () => {
         onOpen: () => setActive(channelId),
       })
     }
+  }
+
+  function receiveMessage(payload) {
+    if (me.value?.status === 'offline') {
+      pending.value.push({ ...payload, time: nowTime() })
+      return
+    }
+    deliverMessage(payload)
+  }
+
+  function flushPending() {
+    const queued = pending.value
+    pending.value = []
+    queued.forEach((payload) => deliverMessage(payload, { notify: false }))
   }
 
   return {

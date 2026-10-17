@@ -46,50 +46,61 @@
       <div class="pair">
         <label class="field">
           <span class="field-label">First name</span>
-          <input v-model="regForm.firstName" placeholder="First name" 
+          <input
+            v-model="regForm.firstName"
+            placeholder="First name"
             class="input"
             :class="{ invalid: regErrors.firstName }"
             type="text"
             autocomplete="given-name"
-            maxlength="20"
+            :maxlength="NAME_MAX"
             required
             :aria-invalid="!!regErrors.firstName"
-            @blur="touched.firstName = true" />
+            @blur="touched.firstName = true"
+          />
           <span v-if="regErrors.firstName" class="field-error">{{ regErrors.firstName }}</span>
+          <span v-else-if="limitHints.firstName" class="field-hint">{{ limitHints.firstName }}</span>
         </label>
         <label class="field">
           <span class="field-label">Last name</span>
-          <input v-model="regForm.lastName" placeholder="Last name"
+          <input
+            v-model="regForm.lastName"
+            placeholder="Last name"
             class="input"
             :class="{ invalid: regErrors.lastName }"
             type="text"
             autocomplete="family-name"
-            maxlength="20"
+            :maxlength="NAME_MAX"
             required
             :aria-invalid="!!regErrors.lastName"
-            @blur="touched.lastName = true" />
+            @blur="touched.lastName = true"
+          />
           <span v-if="regErrors.lastName" class="field-error">{{ regErrors.lastName }}</span>
+          <span v-else-if="limitHints.lastName" class="field-hint">{{ limitHints.lastName }}</span>
         </label>
       </div>
       <label class="field">
         <span class="field-label">Nickname</span>
         <input
-          v-model="regForm.nickName" placeholder="Nickname"
+          v-model="regForm.nickName"
+          placeholder="Nickname"
           class="input"
           :class="{ invalid: regErrors.nickName }"
           type="text"
           autocomplete="nickname"
-          maxlength="20"
+          :maxlength="NAME_MAX"
           required
           :aria-invalid="!!regErrors.nickName"
-          @blur="touched.nickName = true" 
+          @blur="touched.nickName = true"
         />
         <span v-if="regErrors.nickName" class="field-error">{{ regErrors.nickName }}</span>
+        <span v-else-if="limitHints.nickName" class="field-hint">{{ limitHints.nickName }}</span>
       </label>
       <label class="field">
         <span class="field-label">Email</span>
         <input
-          v-model="regForm.email" placeholder="Email"
+          v-model="regForm.email"
+          placeholder="Email"
           class="input"
           :class="{ invalid: regErrors.email }"
           type="email"
@@ -102,7 +113,8 @@
       <label class="field">
         <span class="field-label">Password</span>
         <input
-          v-model="regForm.password" placeholder="Password"
+          v-model="regForm.password"
+          placeholder="Password"
           class="input"
           :class="{ invalid: regErrors.password }"
           type="password"
@@ -123,6 +135,8 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useChatStore, DEMO_PASSWORD } from '../stores/chat'
 import logo from '../assets/logo.png'
 
+const NAME_MAX = 20
+
 const chat = useChatStore()
 
 const mode = ref('login')
@@ -139,6 +153,14 @@ watch(() => regForm.email, () => (regTaken.email = ''))
 const canLogin = computed(() => !!loginForm.login.trim() && !!loginForm.password)
 const touched = reactive({})
 
+const limitMessage = `Maximum is ${NAME_MAX} characters`
+
+const limitHints = computed(() => ({
+  firstName: regForm.firstName.length >= NAME_MAX ? limitMessage : '',
+  lastName: regForm.lastName.length >= NAME_MAX ? limitMessage : '',
+  nickName: regForm.nickName.length >= NAME_MAX ? limitMessage : '',
+}))
+
 const regErrors = computed(() => {
   const errors = {}
   const nick = regForm.nickName.trim()
@@ -147,13 +169,13 @@ const regErrors = computed(() => {
   if (touched.firstName && !regForm.firstName.trim()) errors.firstName = 'First name is required'
   if (touched.lastName && !regForm.lastName.trim()) errors.lastName = 'Last name is required'
   if (touched.nickName && !nick) errors.nickName = 'Nickname is required'
-  
+
   if (nick && !/^[\w-]+$/.test(nick)) errors.nickName = 'Use only letters, numbers, - and _'
   else if (regTaken.nickName) errors.nickName = regTaken.nickName
 
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email'
   else if (regTaken.email) errors.email = regTaken.email
-  
+
   if (regForm.password && regForm.password.length < 6) errors.password = 'Use at least 6 characters'
   return errors
 })
@@ -338,6 +360,13 @@ function submitRegister() {
   font-size: 13px;
   font-weight: 700;
   color: $qt-fail-ink;
+}
+
+.field-hint {
+  padding-left: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: $primary;
 }
 
 .error {

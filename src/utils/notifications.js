@@ -1,17 +1,56 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { AppVisibility } from 'quasar'
 
-export const toasts = ref([])
+const MAX_VISIBLE = 3
+const MAX_QUEUED = 50
+const TOAST_MS = 6000
+const DRAIN_MS = 800
+
+const queue = ref([])
+const timers = new Map()
+let drain = null
 let seq = 0
 
+export const toasts = computed(() => queue.value.slice(0, MAX_VISIBLE))
+export const hiddenToastCount = computed(() => Math.max(0, queue.value.length - MAX_VISIBLE))
+
+function startTimers() {
+  for (const t of queue.value.slice(0, MAX_VISIBLE)) {
+    if (!timers.has(t.id)) {
+      timers.set(t.id, setTimeout(() => dismissToast(t.id), TOAST_MS))
+    }
+  }
+}
+
+function stopDrain() {
+  clearInterval(drain)
+  drain = null
+}
+
+function updateDrain() {
+  if (queue.value.length <= MAX_VISIBLE) {
+    stopDrain()
+    return
+  }
+  if (drain) return
+  drain = setInterval(() => {
+    if (queue.value.length > MAX_VISIBLE) dismissToast(queue.value[0].id)
+    else stopDrain()
+  }, DRAIN_MS)
+}
+
 export function dismissToast(id) {
-  toasts.value = toasts.value.filter((t) => t.id !== id)
+  clearTimeout(timers.get(id))
+  timers.delete(id)
+  queue.value = queue.value.filter((t) => t.id !== id)
+  startTimers()
+  updateDrain()
 }
 
 function pushToast(toast) {
-  const id = ++seq
-  toasts.value = [...toasts.value, { id, ...toast }].slice(-3)
-  setTimeout(() => dismissToast(id), 6000)
+  queue.value = [...queue.value, { id: ++seq, ...toast }].slice(-MAX_QUEUED)
+  startTimers()
+  updateDrain()
 }
 
 export async function requestNotificationPermission() {
