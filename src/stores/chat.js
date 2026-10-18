@@ -119,6 +119,19 @@ export const useChatStore = defineStore('chat', () => {
     channel.invitedIds = channel.invitedIds.filter((id) => id !== me.value.id)
   }
 
+  function updateChannel(channel, { name, type }) {
+    if (channel.adminId !== me.value.id) return result(false, 'Only the admin can edit this channel')
+
+    const taken = channels.value.some(
+      (c) => c.id !== channel.id && c.name.toLowerCase() === name.toLowerCase(),
+    )
+    if (taken) return result(false, 'Name is already taken')
+
+    channel.name = name
+    channel.type = type
+    return result(true, 'Saved ', name)
+  }
+
   function createChannel({ name, type }) {
     const id = Math.max(0, ...channels.value.map((c) => c.id)) + 1
     channels.value.unshift({
@@ -364,6 +377,7 @@ export const useChatStore = defineStore('chat', () => {
     inviteToActive,
     inviteByNick,
     joinChannel,
+    updateChannel,
     canKick,
     kickPreview,
     kickFromActive,

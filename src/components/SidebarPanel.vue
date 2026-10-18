@@ -7,35 +7,40 @@
       </header>
 
       <nav v-if="chat.isLoggedIn" class="middle">
-        <InvitationCard
-          v-for="c in invitations"
-          :key="c.id"
-          :channel="c"
-          @accept="chat.acceptInvite(c)"
-          @decline="chat.declineInvite(c)"
-        />
+        <ChannelSearch v-model="query" class="channel-search" />
 
-        <div class="label">
-          <span>Your channels</span>
-          <q-btn
-            flat
-            round
-            dense
-            size="sm"
-            icon="add"
-            aria-label="Create channel"
-            @click="createOpen = true"
+        <template v-if="!query.trim()">
+          <InvitationCard
+            v-for="c in invitations"
+            :key="c.id"
+            :channel="c"
+            @accept="chat.acceptInvite(c)"
+            @decline="chat.declineInvite(c)"
           />
-        </div>
 
-        <ChannelItem
-          v-for="c in myChannels"
-          :key="c.id"
-          :channel="c"
-          :active="c.id === chat.activeId"
-          @click="chat.setActive(c.id)"
-          @leave="askLeave(c)"
-        />
+          <div class="label">
+            <span>Your channels</span>
+            <q-btn
+              flat
+              round
+              dense
+              size="sm"
+              icon="add"
+              aria-label="Create channel"
+              @click="createOpen = true"
+            />
+          </div>
+
+          <ChannelItem
+            v-for="c in myChannels"
+            :key="c.id"
+            :channel="c"
+            :active="c.id === chat.activeId"
+            @click="chat.setActive(c.id)"
+            @leave="askLeave(c)"
+            @edit="askEdit(c)"
+          />
+        </template>
       </nav>
 
       <div v-else class="middle logged-out">
@@ -68,6 +73,13 @@
 
     <ProfileDialog v-model="profileOpen" :user="chat.me" />
 
+    <CreateChannelDialog
+      v-model="editOpen"
+      :channel="editing"
+      :existing-names="existingNames"
+      @save="(data) => showFeedback(chat.updateChannel(editing, data))"
+    />
+
     <LeaveChannelDialog v-model="leaveOpen" :channel="leaving" @left="showFeedback" />
   </aside>
 </template>
@@ -81,6 +93,7 @@ import CreateChannelDialog from './CreateChannelDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
 import LeaveChannelDialog from './LeaveChannelDialog.vue'
 import StatusPicker from './StatusPicker.vue'
+import ChannelSearch from './ChannelSearch.vue'
 import { useCommands } from '../composables/useCommands'
 
 // Logo: Rubber duck icons created by vectorsmarket15 - Flaticon
@@ -92,12 +105,21 @@ const myChannels = computed(() => chat.myChannels)
 const invitations = computed(() => chat.myInvitations)
 const existingNames = computed(() => chat.channels.map((c) => c.name))
 const createOpen = ref(false)
+const query = ref('')
 const profileOpen = ref(false)
 
 const leaveOpen = ref(false)
 const leaving = ref(null)
 
 const { show: showFeedback } = useCommands()
+
+const editOpen = ref(false)
+const editing = ref(null)
+
+function askEdit(channel) {
+  editing.value = channel
+  editOpen.value = true
+}
 
 function askLeave(channel) {
   leaving.value = channel
@@ -146,6 +168,14 @@ function askLeave(channel) {
   overflow-x: hidden;
   overflow-y: auto;
   padding: 0 25px 0 12px;
+}
+
+.channel-search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 4px 0 10px;
+  background: $dark;
 }
 
 .label {

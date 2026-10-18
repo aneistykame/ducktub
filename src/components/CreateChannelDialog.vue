@@ -2,7 +2,7 @@
   <q-dialog :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
     <q-card class="dialog">
       <header class="dialog-header">
-        <span>Create channel</span>
+        <span>{{ channel ? 'Edit channel' : 'Create channel' }}</span>
         <q-btn flat round dense icon="close" aria-label="Close" @click="close" />
       </header>
 
@@ -56,7 +56,7 @@
         no-caps
         color="secondary"
         text-color="dark"
-        label="Create channel"
+        :label="channel ? 'Save changes' : 'Create channel'"
         :disable="!isValid"
         @click="submit"
       />
@@ -70,16 +70,23 @@ import { ref, computed, watch } from 'vue'
 const props = defineProps({
   modelValue: Boolean,
   existingNames: { type: Array, default: () => [] },
+  channel: { type: Object, default: null },
 })
-const emit = defineEmits(['update:modelValue', 'create'])
+const emit = defineEmits(['update:modelValue', 'create', 'save'])
 
 const name = ref('')
 const type = ref('public')
 
 const trimmed = computed(() => name.value.trim())
 
-const isTaken = computed(() =>
-  props.existingNames.some((n) => n.toLowerCase() === trimmed.value.toLowerCase()),
+const isTaken = computed(() => {
+  const value = trimmed.value.toLowerCase()
+  if (props.channel && value === props.channel.name.toLowerCase()) return false
+  return props.existingNames.some((n) => n.toLowerCase() === value)
+})
+
+const isUnchanged = computed(
+  () => !!props.channel && trimmed.value === props.channel.name && type.value === props.channel.type,
 )
 
 const errorMessage = computed(() => {
@@ -89,7 +96,7 @@ const errorMessage = computed(() => {
   return ''
 })
 
-const isValid = computed(() => !!trimmed.value && !errorMessage.value)
+const isValid = computed(() => !!trimmed.value && !errorMessage.value && !isUnchanged.value)
 
 const hint = computed(() =>
   type.value === 'public'
@@ -103,7 +110,7 @@ function close() {
 
 function submit() {
   if (!isValid.value) return
-  emit('create', { name: trimmed.value, type: type.value })
+  emit(props.channel ? 'save' : 'create', { name: trimmed.value, type: type.value })
   close()
 }
 
@@ -111,8 +118,8 @@ watch(
   () => props.modelValue,
   (open) => {
     if (open) {
-      name.value = ''
-      type.value = 'public'
+      name.value = props.channel?.name ?? ''
+      type.value = props.channel?.type ?? 'public'
     }
   },
 )

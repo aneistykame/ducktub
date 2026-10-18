@@ -43,6 +43,10 @@
 
       <q-menu v-model="menuOpen" class="channel-menu" anchor="bottom right" self="top right" :offset="[0, 6]">
         <q-list role="menu">
+          <q-item v-if="isAdmin" v-close-popup clickable role="menuitem" class="channel-menu-row" @click="emit('edit')">
+            <q-icon name="edit" size="18px" />
+            <span>Edit channel</span>
+          </q-item>
           <q-item v-close-popup clickable role="menuitem" class="channel-menu-row" :class="{ danger: isAdmin }" @click="emit('leave')">
             <q-icon :name="isAdmin ? 'delete_outline' : 'logout'" size="18px" />
             <span>{{ isAdmin ? 'Delete channel' : 'Leave channel' }}</span>
@@ -61,7 +65,7 @@ const props = defineProps({
   channel: Object,
   active: Boolean,
 })
-const emit = defineEmits(['leave'])
+const emit = defineEmits(['leave', 'edit'])
 
 const chat = useChatStore()
 const isAdmin = computed(() => props.channel.adminId === chat.me.id)
