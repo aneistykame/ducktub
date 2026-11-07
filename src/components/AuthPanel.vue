@@ -132,14 +132,17 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import { useChatStore, DEMO_PASSWORD } from '../stores/chat'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import logo from '../assets/logo.png'
 
 const NAME_MAX = 20
 
-const chat = useChatStore()
+const auth = useAuthStore()
 
-const mode = ref('login')
+const route = useRoute()
+const router = useRouter()
+const mode = computed(() => (route.name === 'register' ? 'register' : 'login'))
 
 const loginForm = reactive({ login: '', password: '' })
 const loginError = ref('')
@@ -173,7 +176,7 @@ const regErrors = computed(() => {
   if (nick && !/^[\w-]+$/.test(nick)) errors.nickName = 'Use only letters, numbers, - and _'
   else if (regTaken.nickName) errors.nickName = regTaken.nickName
 
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email'
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = 'Enter a valid email'
   else if (regTaken.email) errors.email = regTaken.email
 
   if (regForm.password && regForm.password.length < 6) errors.password = 'Use at least 6 characters'
@@ -191,26 +194,40 @@ const canRegister = computed(
 )
 
 function setMode(m) {
-  mode.value = m
   loginError.value = ''
+  router.push({ name: m })
 }
 
-function submitLogin() {
+async function submitLogin() {
   if (!canLogin.value) return
-  loginError.value = chat.login(loginForm) ?? ''
+  loginError.value = ''
+
+  try {
+    await auth.login({ login: loginForm.login.trim(), password: loginForm.password })
+    router.push(route.query.redirect || { name: 'home' })
+  } catch {
+    loginError.value = auth.errors[0]?.message ?? 'Login failed'
+  }
 }
 
-function submitRegister() {
+async function submitRegister() {
   if (!canRegister.value) return
 
-  const error = chat.register({
-    firstName: regForm.firstName.trim(),
-    lastName: regForm.lastName.trim(),
-    nickName: regForm.nickName.trim(),
-    email: regForm.email.trim(),
-    password: regForm.password,
-  })
-  if (error) regTaken[error.field] = error.message
+  try {
+    await auth.register({
+      firstName: regForm.firstName.trim(),
+      lastName: regForm.lastName.trim(),
+      nickName: regForm.nickName.trim(),
+      email: regForm.email.trim(),
+      password: regForm.password,
+    })
+    router.push({ name: 'login' })
+  } catch {
+    for (const e of auth.errors) {
+      if (e.field === 'nickName') regTaken.nickName = e.message
+      if (e.field === 'email') regTaken.email = e.message
+    }
+  }
 }
 </script>
 

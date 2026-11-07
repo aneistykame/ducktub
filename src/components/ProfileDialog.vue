@@ -116,6 +116,7 @@ import { useChatStore, KICKS_TO_BAN } from '../stores/chat'
 import UserAvatar from './UserAvatar.vue'
 import StatusPicker from './StatusPicker.vue'
 import ChannelName from './ChannelName.vue'
+import { useAuthStore } from '../stores/auth'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -125,6 +126,8 @@ const emit = defineEmits(['update:modelValue'])
 
 const chat = useChatStore()
 const isMe = computed(() => !!chat.me && props.user?.id === chat.me.id)
+
+const auth = useAuthStore()
 
 const statusLabel = { online: 'Floating', dnd: 'Do Not Splash', offline: 'Drying Off' }
 
@@ -209,9 +212,9 @@ function restore() {
   close()
 }
 
-function logout() {
+async function logout() {
   close()
-  chat.logout()
+  await auth.logout()
 }
 </script>
 

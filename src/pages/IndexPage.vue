@@ -1,10 +1,6 @@
 <template>
   <q-page class="page">
-    <div v-if="!chat.isLoggedIn" class="empty auth-slot">
-      <AuthPanel />
-    </div>
-
-    <div v-else-if="!chat.activeChannel" class="empty no-tubs">
+    <div v-if="!chat.activeChannel" class="empty no-tubs">
       <div class="empty-body">
         <h2 class="empty-title">No tubs yet</h2>
         <p class="empty-text">
@@ -46,7 +42,6 @@ import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import MembersPanel from '../components/MembersPanel.vue'
 import ChatArea from '../components/ChatArea.vue'
-import AuthPanel from '../components/AuthPanel.vue'
 import CommandBar from '../components/CommandBar.vue'
 import CommandToast from '../components/CommandToast.vue'
 import { useCommands } from '../composables/useCommands'
@@ -101,29 +96,6 @@ watch(mode, (m) => {
   color: $text-light;
   font-family: $qt-font;
   text-align: center;
-}
-
-.auth-slot {
-  justify-content: flex-start;
-  overflow-y: auto;
-}
-
-@media (max-width: 1123px) {
-  .auth-slot {
-    padding-top: 64px;
-  }
-}
-
-@media (max-width: 599px) {
-  .auth-slot {
-    padding: 56px 16px 12px;
-  }
-}
-
-@media (orientation: landscape) and (max-height: 500px) {
-  .auth-slot {
-    padding: 8px 16px 8px 64px;
-  }
 }
 
 .no-tubs {

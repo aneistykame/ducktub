@@ -54,3 +54,68 @@ export const messages = [
   // hideout (private)
   { id: 18, channelId: 4, authorId: 1, text: 'This is our secret nest. No humans allowed.', time: '20:10', mentions: [] },
 ]
+
+
+const PHRASES = [
+  'Anyone up for bread later?',
+  'The pond is freezing today.',
+  'Quack quack!',
+  'Did you see the new update?',
+  'I will be late for the meeting.',
+  'Who brought the snacks?',
+  'Ducks <3',
+  'Can someone review my PR?',
+  'Lunch at noon?',
+  'Just finished the migration plan.',
+  'That is hilarious.',
+  'I can bring dessert.',
+  'Back in five minutes.',
+  'Great idea, let us do it.',
+  'Not sure about that, can we talk?',
+  'Splashing into the weekend!',
+]
+
+const AUTHORS = {
+  1: [1, 2, 3, 4, 5],
+  2: [1, 2, 3, 6],
+  3: [1, 2, 7],
+  4: [1, 8, 6],
+}
+
+const NICKS = Object.fromEntries(users.map((u) => [u.id, u.nickName]))
+
+function generateMessages(count = 100, channelIds = Object.keys(AUTHORS).map(Number)) {
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)]
+  const pad = (n) => String(n).padStart(2, '0')
+  let id = Math.max(0, ...messages.map((m) => m.id)) + 1
+
+  for (const channelId of channelIds) {
+    const authors = AUTHORS[channelId]
+    let minutes = 8 * 60
+    let author = pick(authors)
+
+    for (let i = 0; i < count; i++) {
+      if (Math.random() < 0.45) author = pick(authors)
+      minutes = (minutes + Math.floor(Math.random() * 7)) % (24 * 60)
+
+      let text = pick(PHRASES)
+      const mentions = []
+      if (Math.random() < 0.1) {
+        const target = pick(authors)
+        text = `@${NICKS[target]} ${text}`
+        mentions.push(NICKS[target])
+      }
+
+      messages.push({
+        id: id++,
+        channelId,
+        authorId: author,
+        text,
+        time: `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`,
+        mentions,
+      })
+    }
+  }
+}
+
+generateMessages(100)

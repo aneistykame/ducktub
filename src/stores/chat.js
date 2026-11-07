@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { users as mockUsers, channels as mockChannels, messages as mockMessages } from '../mock/data'
 import { showMessageNotification } from '../utils/notifications'
+import { useAuthStore } from './auth'
 export const DEMO_PASSWORD = 'quack123'
 export const KICKS_TO_BAN = 3
 export const CHANNEL_NAME_MAX = 30
@@ -21,9 +22,9 @@ export const useChatStore = defineStore('chat', () => {
   const users = ref(mockUsers.map((u) => ({ ...u })))
   const passwords = new Map(mockUsers.map((u) => [u.id, DEMO_PASSWORD]))
 
-  const meId = ref(users.value[0].id)
-  const me = computed(() => users.value.find((u) => u.id === meId.value) ?? null)
-  const isLoggedIn = computed(() => !!me.value)
+  const auth = useAuthStore()
+  const me = computed(() => auth.user)
+  const isLoggedIn = computed(() => auth.isAuthenticated)
 
   const channels = ref(
     mockChannels.map(({ invited, ...c }) => ({
