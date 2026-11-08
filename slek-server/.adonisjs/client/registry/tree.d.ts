@@ -18,4 +18,11 @@ export interface ApiDefinition {
       destroy: typeof routes['profile.session.destroy']
     }
   }
+  channels: {
+    store: typeof routes['channels.store']
+    index: typeof routes['channels.index']
+    leave: typeof routes['channels.leave']
+    accept: typeof routes['channels.accept']
+    decline: typeof routes['channels.decline']
+  }
 }

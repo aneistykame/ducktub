@@ -52,8 +52,8 @@ function close() {
   emit('update:modelValue', false)
 }
 
-function confirm() {
-  const result = chat.leaveChannel(props.channel)
+async function confirm() {
+  const result = await chat.leaveChannel(props.channel)
   close()
   emit('left', result)
 }

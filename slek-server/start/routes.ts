@@ -33,5 +33,16 @@ router
       .prefix('account')
       .as('profile')
       .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.post('/', [controllers.Channels, 'store'])
+        router.get('/', [controllers.Channels, 'index'])
+        router.post('/:id/leave', [controllers.Channels, 'leave'])
+        router.post('/:id/accept', [controllers.Channels, 'accept'])
+        router.post('/:id/decline', [controllers.Channels, 'decline'])
+      })
+      .prefix('channels')
+      .use(middleware.auth())
   })
   .prefix('/api/v1')

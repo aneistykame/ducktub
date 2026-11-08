@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { users as mockUsers, channels as mockChannels, messages as mockMessages } from '../mock/data'
+import { ref, computed, watch } from 'vue'
+import { users as mockUsers, messages as mockMessages } from '../mock/data'
 import { showMessageNotification } from '../utils/notifications'
 import { useAuthStore } from './auth'
+import { channelService } from '@/services'
 export const DEMO_PASSWORD = 'quack123'
 export const KICKS_TO_BAN = 3
 export const CHANNEL_NAME_MAX = 30
@@ -26,18 +27,9 @@ export const useChatStore = defineStore('chat', () => {
   const me = computed(() => auth.user)
   const isLoggedIn = computed(() => auth.isAuthenticated)
 
-  const channels = ref(
-    mockChannels.map(({ invited, ...c }) => ({
-      ...c,
-      memberIds: [...(c.memberIds ?? [])],
-      invitedIds: invited ? [mockUsers[0].id] : [],
-      bannedIds: [],
-      kickedBy: {},
-      mentionCount: 0,
-    })),
-  )
+  const channels = ref([])
   const messages = ref([...mockMessages])
-  const activeId = ref(1)
+  const activeId = ref(null)
   const pending = ref([])
 
   const myChannels = computed(() =>
@@ -74,6 +66,44 @@ export const useChatStore = defineStore('chat', () => {
     if (first) setActive(first.id)
     else activeId.value = null
   }
+
+  function channelFromServer(c, { invited = false } = {}) {
+    return {
+      id: c.id,
+      name: c.name,
+      type: c.type,
+      adminId: c.adminId,
+      lastActivity: c.lastActivityAt ? new Date(c.lastActivityAt).getTime() : 0,
+      unread: 0,
+      mentionCount: 0,
+      memberIds: invited ? [] : [me.value.id],
+      invitedIds: invited ? [me.value.id] : [],
+      bannedIds: [],
+      kickedBy: {},
+    }
+  }
+
+  async function loadChannels() {
+    const { channels: mine, invitations } = await channelService.list()
+    channels.value = [
+      ...mine.map((c) => channelFromServer(c)),
+      ...invitations.map((c) => channelFromServer(c, { invited: true })),
+    ]
+    openFirstChannel()
+  }
+
+  watch(
+    () => auth.user?.id,
+    (id) => {
+      if (id) {
+        loadChannels()
+      } else {
+        channels.value = []
+        activeId.value = null
+      }
+    },
+    { immediate: true },
+  )
 
   function login({ login, password }) {
     const key = login.trim().toLowerCase()
@@ -133,36 +163,29 @@ export const useChatStore = defineStore('chat', () => {
     return result(true, 'Saved ', name)
   }
 
-  function createChannel({ name, type }) {
-    const id = Math.max(0, ...channels.value.map((c) => c.id)) + 1
-    channels.value.unshift({
-      id,
-      name,
-      type,
-      adminId: me.value.id,
-      unread: 0,
-      mentionCount: 0,
-      lastActivity: Date.now(),
-      memberIds: [me.value.id],
-      invitedIds: [],
-      bannedIds: [],
-      kickedBy: {},
-    })
-    setActive(id)
+  async function createChannel({ name, type }) {
+    try {
+      const created = await channelService.create({ name, type })
+      channels.value.unshift(channelFromServer(created))
+      setActive(created.id)
+      return result(true, 'Created ', name)
+    } catch (err) {
+      return result(false, err.response?.data?.errors?.[0]?.message ?? 'Could not create the channel')
+    }
   }
 
   // Leaving as the admin deletes the channel for everyone
-  function leaveChannel(channel) {
-    const deleted = channel.adminId === me.value.id
-    if (deleted) {
-      messages.value = messages.value.filter((m) => m.channelId !== channel.id)
+  async function leaveChannel(channel) {
+    try {
+      const { deleted } = await channelService.leave(channel.id)
       channels.value = channels.value.filter((c) => c.id !== channel.id)
-    } else {
-      channel.memberIds = channel.memberIds.filter((id) => id !== me.value.id)
-    }
+      if (deleted) messages.value = messages.value.filter((m) => m.channelId !== channel.id)
 
-    if (activeId.value === channel.id) openFirstChannel()
-    return result(true, deleted ? 'Deleted ' : 'Left ', channel.name)
+      if (activeId.value === channel.id) openFirstChannel()
+      return result(true, deleted ? 'Deleted ' : 'Left ', channel.name)
+    } catch {
+      return result(false, 'Could not leave the channel')
+    }
   }
 
   function inviteToActive(user) {
@@ -177,6 +200,26 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     if (!channel.invitedIds.includes(user.id)) channel.invitedIds.push(user.id)
+  }
+
+  async function acceptInvite(channel) {
+    try {
+      await channelService.accept(channel.id)
+      channel.invitedIds = []
+      channel.memberIds = [me.value.id]
+      channel.lastActivity = Date.now()
+    } catch {
+      // the invitation is no longer valid
+    }
+  }
+
+  async function declineInvite(channel) {
+    try {
+      await channelService.decline(channel.id)
+      channels.value = channels.value.filter((c) => c.id !== channel.id)
+    } catch {
+      // the invitation is no longer valid
+    }
   }
 
   // Results keep the channel name separate so the UI can shorten it

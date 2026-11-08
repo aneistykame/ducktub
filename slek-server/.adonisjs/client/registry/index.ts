@@ -32,6 +32,36 @@ const routes = {
     tokens: [[0,"api"],[0,"v1"],[0,"account"],[0,"logout"]],
     types: placeholder as Registry['profile.session.destroy']['types'],
   },
+  'channels.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"]],
+    types: placeholder as Registry['channels.store']['types'],
+  },
+  'channels.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/channels',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"]],
+    types: placeholder as Registry['channels.index']['types'],
+  },
+  'channels.leave': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/leave',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"leave"]],
+    types: placeholder as Registry['channels.leave']['types'],
+  },
+  'channels.accept': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/accept',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"accept"]],
+    types: placeholder as Registry['channels.accept']['types'],
+  },
+  'channels.decline': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/decline',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"decline"]],
+    types: placeholder as Registry['channels.decline']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }
