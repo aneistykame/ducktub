@@ -39,7 +39,16 @@ export function useCommands() {
       } else {
         say(false, 'Open a channel first, then /cancel')
       }
-    } else if (command === 'invite') {
+    } else if (command === 'quit') {
+        if (!chat.activeChannel) {
+          say(false, 'Open a channel first, then /quit')
+        } else if (!chat.activeIsAdmin) {
+          say(false, 'Only the admin can close this channel')
+        } else {
+          leaveTarget.value = chat.activeChannel
+          leaveOpen.value = true
+        }
+      } else if (command === 'invite') {
       if (chat.activeChannel) show(chat.inviteByNick(args[0] ?? ''))
       else say(false, 'Open a channel first, then /invite nickName')
     } else {
