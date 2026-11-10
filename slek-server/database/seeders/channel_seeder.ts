@@ -112,6 +112,14 @@ export default class extends BaseSeeder {
     const lake = await Channel.findByOrFail("name", "secret-lake");
     await lake.related("invitedUsers").attach({ 1: { invited_by_id: 4 } });
 
+    // the hand-written messages are from today
+    const today = now.startOf("day");
+    const rows = MESSAGES.map(([channelId, authorId, text, time]) => {
+      const [h, m] = time.split(":").map(Number);
+      return { channelId, authorId, text, at: today.set({ hour: h, minute: m }) };
+    });
+
+    // the generated ones are from yesterday
     for (const [channelId, memberIds] of [
       [1, [1, 2, 3, 4, 5]],
       [2, [1, 2, 3, 6]],
@@ -123,19 +131,20 @@ export default class extends BaseSeeder {
         if (Math.random() < 0.45) author = pick(memberIds);
         let text = pick(PHRASES);
         if (Math.random() < 0.1) text = `@${nickById.get(pick(memberIds))} ${text}`;
-        const time = now.startOf("day").minus({ days: 1 }).plus({ minutes: i * 5 });
-        MESSAGES.push([channelId, author, text, time.toFormat("HH:mm")]);
+        const at = today.minus({ days: 1 }).plus({ minutes: i * 5 });
+        rows.push({ channelId, authorId: author, text, at });
       }
     }
 
-    const today = now.startOf("day");
-    for (const [channelId, authorId, text, time] of MESSAGES) {
-      const [h, m] = time.split(":").map(Number);
+    // insert oldest first, so message ids follow time (pagination pages by id)
+    rows.sort((a, b) => a.at.toMillis() - b.at.toMillis());
+
+    for (const { channelId, authorId, text, at } of rows) {
       const message = await Message.create({
         channelId,
         authorId,
         content: text,
-        createdAt: today.set({ hour: h, minute: m }),
+        createdAt: at,
       });
 
       const mentionedIds = [...text.matchAll(/@(\w+)/g)]

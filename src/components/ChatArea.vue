@@ -42,7 +42,7 @@
 
     <LeaveChannelDialog v-model="leaveOpen" :channel="leaveTarget" @left="show" />
 
-    <div class="simulate">
+    <div v-if="isDev" class="simulate">
       <q-btn flat no-caps label="Simulate message" @click="simulate(false)" />
       <q-btn flat no-caps label="Simulate mention" @click="simulate(true)" />
     </div>
@@ -98,73 +98,66 @@ const channel = computed(() => chat.activeChannel)
 const channelMessages = computed(() => chat.activeMessages)
 const authorOf = (m) => chat.users.find((u) => u.id === m.authorId)
 
-const PAGE = 30
 const TOP_OFFSET = 100
-const loaded = ref(PAGE)
+const BOTTOM_OFFSET = 150
 const loading = ref(false)
 
-const hasMore = computed(() => loaded.value < channelMessages.value.length)
-
-const visibleMessages = computed(() => channelMessages.value.slice(-loaded.value))
-
 const items = computed(() =>
-  visibleMessages.value.map((m, i, arr) => ({
+  channelMessages.value.map((m, i, arr) => ({
     m,
     first: i === 0 || arr[i - 1].authorId !== m.authorId,
     last: i === arr.length - 1 || arr[i + 1].authorId !== m.authorId,
   })),
 )
 
-function onScroll() {
+// Near the top: fetch the previous page from the server and keep the view where it was
+async function onScroll() {
   const el = messagesEl.value
-  if (!el || loading.value || !hasMore.value) return
+  if (!el || loading.value || !chat.activeHasMore) return
   if (el.scrollTop > TOP_OFFSET) return
 
   loading.value = true
+  const channelId = chat.activeId
+  const heightBefore = el.scrollHeight
+  const topBefore = el.scrollTop
 
-  setTimeout(async () => {
-    const heightBefore = el.scrollHeight
-    const topBefore = el.scrollTop
-
-    loaded.value += PAGE
+  try {
+    await chat.loadOlderMessages(channelId)
     await nextTick()
-
-    el.scrollTop = topBefore + (el.scrollHeight - heightBefore)
+    if (chat.activeId === channelId) el.scrollTop = topBefore + (el.scrollHeight - heightBefore)
+  } finally {
     loading.value = false
-  }, 400)
+  }
 }
 
 async function scrollToEnd() {
   await nextTick()
-  messagesEl.value.scrollTop = messagesEl.value.scrollHeight
+  if (messagesEl.value) messagesEl.value.scrollTop = messagesEl.value.scrollHeight
+}
+
+const nearBottom = () => {
+  const el = messagesEl.value
+  return !el || el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_OFFSET
 }
 
 const { feedback, run, show, leaveOpen, leaveTarget } = useCommands()
 
-function onSubmit(text) {
+async function onSubmit(text) {
   if (run(text)) return
 
-  chat.sendMessage(text)
-  loaded.value++
-  scrollToEnd()
+  const res = await chat.sendMessage(text)
+  if (!res.ok) show(res)
 }
 
-function simulate(withMention) {
-  const ed = chat.users.find((u) => u.nickName === 'ed')
-  const target =
-    chat.myChannels.find((c) => c.id !== chat.activeId && c.memberIds.includes(ed.id)) ??
-    chat.activeChannel
+const isDev = import.meta.env.DEV
 
+// Waits a moment so you can switch to another tub or window and see the notification
+function simulate(withMention) {
   requestNotificationPermission()
 
-  setTimeout(() => {
-    chat.receiveMessage({
-      channelId: target.id,
-      authorId: ed.id,
-      text: withMention
-        ? `Hey @${chat.me.nickName}, are you coming to the meeting later today?`
-        : 'Ducks <3',
-    })
+  setTimeout(async () => {
+    const res = await chat.simulateMessage(withMention)
+    if (!res.ok) show(res)
   }, 3000)
 }
 
@@ -173,9 +166,18 @@ onMounted(scrollToEnd)
 watch(
   () => chat.activeId,
   () => {
-    loaded.value = PAGE
     loading.value = false
     scrollToEnd()
+  },
+)
+
+// A new message at the bottom: follow it if it's mine or the reader was already at the end
+watch(
+  () => channelMessages.value.at(-1)?.id,
+  (id, oldId) => {
+    if (id === undefined || id === oldId) return
+    const last = channelMessages.value.at(-1)
+    if (oldId === undefined || last.authorId === chat.me?.id || nearBottom()) scrollToEnd()
   },
 )
 </script>

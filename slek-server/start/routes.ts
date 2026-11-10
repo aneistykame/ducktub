@@ -8,6 +8,7 @@
 */
 
 import { middleware } from '#start/kernel'
+import app from '@adonisjs/core/services/app'
 import router from '@adonisjs/core/services/router'
 import { controllers } from '#generated/controllers'
 
@@ -41,8 +42,16 @@ router
         router.post('/:id/leave', [controllers.Channels, 'leave'])
         router.post('/:id/accept', [controllers.Channels, 'accept'])
         router.post('/:id/decline', [controllers.Channels, 'decline'])
+        router.get('/:id/messages', [controllers.Messages, 'index'])
+        router.post('/:id/messages', [controllers.Messages, 'store'])
       })
       .prefix('channels')
       .use(middleware.auth())
+
+    router.get('users', [controllers.Users, 'index']).use(middleware.auth())
+
+    if (app.inDev) {
+      router.post('dev/simulate', [controllers.Messages, 'simulate']).use(middleware.auth())
+    }
   })
   .prefix('/api/v1')

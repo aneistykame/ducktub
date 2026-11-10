@@ -36,6 +36,11 @@ export default class Channel extends ChannelSchema {
   })
   declare bannedUsers: ManyToMany<typeof User>;
 
+  async hasMember(this: Channel, userId: number) {
+    const member = await this.related('members').query().where('users.id', userId).first()
+    return !!member
+  }
+
   static async deleteExpired(days = 30) {
     const limit = DateTime.now().minus({ days }).toSQL({ includeOffset: false })!
     await this.query().where('last_activity_at', '<', limit).delete()

@@ -25,4 +25,12 @@ export interface ApiDefinition {
     accept: typeof routes['channels.accept']
     decline: typeof routes['channels.decline']
   }
+  messages: {
+    index: typeof routes['messages.index']
+    store: typeof routes['messages.store']
+    simulate: typeof routes['messages.simulate']
+  }
+  users: {
+    index: typeof routes['users.index']
+  }
 }

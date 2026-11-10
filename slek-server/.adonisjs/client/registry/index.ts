@@ -62,6 +62,30 @@ const routes = {
     tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"decline"]],
     types: placeholder as Registry['channels.decline']['types'],
   },
+  'messages.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/channels/:id/messages',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"messages"]],
+    types: placeholder as Registry['messages.index']['types'],
+  },
+  'messages.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/messages',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"messages"]],
+    types: placeholder as Registry['messages.store']['types'],
+  },
+  'users.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/users',
+    tokens: [[0,"api"],[0,"v1"],[0,"users"]],
+    types: placeholder as Registry['users.index']['types'],
+  },
+  'messages.simulate': {
+    methods: ["POST"],
+    pattern: '/api/v1/dev/simulate',
+    tokens: [[0,"api"],[0,"v1"],[0,"dev"],[0,"simulate"]],
+    types: placeholder as Registry['messages.simulate']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

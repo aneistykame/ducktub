@@ -1,15 +1,24 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { users as mockUsers, messages as mockMessages } from '../mock/data'
 import { showMessageNotification } from '../utils/notifications'
 import { useAuthStore } from './auth'
-import { channelService } from '@/services'
-export const DEMO_PASSWORD = 'quack123'
+import { channelService, messageService, userService, socket, channelName } from '@/services'
 export const KICKS_TO_BAN = 3
 export const CHANNEL_NAME_MAX = 30
+export const MESSAGES_PAGE = 30
 
-let nextMessageId = Date.now()
-const nowTime = () => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+const toTime = (date) => date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+const nowTime = () => toTime(new Date())
+const mentionsIn = (text) => (text.match(/@\w+/g) || []).map((t) => t.slice(1))
+
+const messageFromServer = (m) => ({
+  id: m.id,
+  channelId: m.channelId,
+  authorId: m.authorId,
+  text: m.content,
+  time: m.createdAt ? toTime(new Date(m.createdAt)) : nowTime(),
+  mentions: mentionsIn(m.content),
+})
 
 const result = (ok, before, channel = null, after = '') => ({
   ok,
@@ -20,15 +29,17 @@ const result = (ok, before, channel = null, after = '') => ({
 })
 
 export const useChatStore = defineStore('chat', () => {
-  const users = ref(mockUsers.map((u) => ({ ...u })))
-  const passwords = new Map(mockUsers.map((u) => [u.id, DEMO_PASSWORD]))
+  const users = ref([])
 
   const auth = useAuthStore()
   const me = computed(() => auth.user)
   const isLoggedIn = computed(() => auth.isAuthenticated)
 
   const channels = ref([])
-  const messages = ref([...mockMessages])
+  const messages = ref([])
+  const loadedChannelIds = new Set()
+  // channel id -> whether the server has older messages than the ones loaded
+  const hasMoreById = ref({})
   const activeId = ref(null)
   const pending = ref([])
 
@@ -47,6 +58,7 @@ export const useChatStore = defineStore('chat', () => {
 
   const activeChannel = computed(() => myChannels.value.find((c) => c.id === activeId.value))
   const activeMessages = computed(() => messages.value.filter((m) => m.channelId === activeId.value))
+  const activeHasMore = computed(() => !!hasMoreById.value[activeId.value])
 
   const activeIsPublic = computed(() => activeChannel.value?.type === 'public')
   const activeIsAdmin = computed(() => !!me.value && activeChannel.value?.adminId === me.value.id)
@@ -58,7 +70,88 @@ export const useChatStore = defineStore('chat', () => {
     if (channel) {
       channel.unread = 0
       channel.mentionCount = 0
+      if (channel.memberIds.includes(me.value?.id)) loadMessages(id)
     }
+  }
+
+  // The newest page is fetched once per channel; new messages then arrive over the socket
+  async function loadMessages(channelId) {
+    if (loadedChannelIds.has(channelId)) return
+    loadedChannelIds.add(channelId)
+    try {
+      const page = await messageService.list(channelId, { limit: MESSAGES_PAGE })
+      messages.value = [
+        ...messages.value.filter((m) => m.channelId !== channelId),
+        ...page.messages.map(messageFromServer),
+      ]
+      hasMoreById.value[channelId] = page.hasMore
+    } catch {
+      loadedChannelIds.delete(channelId)
+    }
+  }
+
+  // Older page, above the oldest message we have. Returns how many were added
+  async function loadOlderMessages(channelId) {
+    const oldest = messages.value.find((m) => m.channelId === channelId)
+    if (!oldest || !hasMoreById.value[channelId]) return 0
+
+    const page = await messageService.list(channelId, { before: oldest.id, limit: MESSAGES_PAGE })
+    const known = new Set(messages.value.map((m) => m.id))
+    const older = page.messages.map(messageFromServer).filter((m) => !known.has(m.id))
+    messages.value = [...older, ...messages.value]
+    hasMoreById.value[channelId] = page.hasMore
+    return older.length
+  }
+
+  async function loadUsers() {
+    try {
+      users.value = await userService.list()
+    } catch {
+      // keep the users we already know
+    }
+  }
+
+  // Live messages: one socket channel per chat channel I'm a member of
+  let connecting = null
+  const subscriptions = new Map()
+
+  async function subscribe(channelId) {
+    if (subscriptions.has(channelId)) return
+    const channel = socket.channel(channelName(channelId))
+    subscriptions.set(channelId, channel)
+    channel.listen('message:new', (payload) => receiveMessage(messageFromServer(payload)))
+    try {
+      await connecting
+      await channel.subscribe()
+    } catch {
+      subscriptions.delete(channelId)
+    }
+  }
+
+  function unsubscribe(channelId) {
+    if (!subscriptions.delete(channelId)) return
+    socket.leave(channelName(channelId)).catch(() => {})
+  }
+
+  watch(
+    () => myChannels.value.map((c) => c.id),
+    (ids) => {
+      if (!connecting) return
+      ids.forEach(subscribe)
+      ;[...subscriptions.keys()].filter((id) => !ids.includes(id)).forEach(unsubscribe)
+    },
+  )
+
+  function connectSocket() {
+    connecting = socket.connect().catch((err) => console.warn('Socket connection failed', err))
+    myChannels.value.forEach((c) => subscribe(c.id))
+  }
+
+  function disconnectSocket() {
+    if (!connecting) return
+    connecting = null
+    subscriptions.clear()
+    socket.disconnect()
   }
 
   function openFirstChannel() {
@@ -95,60 +188,23 @@ export const useChatStore = defineStore('chat', () => {
   watch(
     () => auth.user?.id,
     (id) => {
+      disconnectSocket()
       if (id) {
+        loadUsers()
         loadChannels()
+        connectSocket()
       } else {
+        users.value = []
         channels.value = []
+        messages.value = []
+        pending.value = []
+        loadedChannelIds.clear()
+        hasMoreById.value = {}
         activeId.value = null
       }
     },
     { immediate: true },
   )
-
-  function login({ login, password }) {
-    const key = login.trim().toLowerCase()
-    const user = users.value.find((u) => u.email.toLowerCase() === key || u.nickName.toLowerCase() === key)
-    if (!user || passwords.get(user.id) !== password) return 'Wrong email, nickname or password'
-
-    meId.value = user.id
-    user.status = 'online'
-    flushPending()
-    openFirstChannel()
-    return null
-  }
-
-  function register({ firstName, lastName, nickName, email, password }) {
-    if (users.value.some((u) => u.nickName.toLowerCase() === nickName.toLowerCase())) {
-      return { field: 'nickName', message: 'Nickname is already taken' }
-    }
-    if (users.value.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      return { field: 'email', message: 'Email is already registered' }
-    }
-
-    const id = Math.max(0, ...users.value.map((u) => u.id)) + 1
-    users.value.push({ id, firstName, lastName, nickName, email, status: 'online' })
-    passwords.set(id, password)
-
-    meId.value = id
-    openFirstChannel()
-    return null
-  }
-
-  function logout() {
-    if (me.value) me.value.status = 'offline'
-    meId.value = null
-    activeId.value = null
-  }
-
-  function acceptInvite(channel) {
-    channel.invitedIds = channel.invitedIds.filter((id) => id !== me.value.id)
-    if (!channel.memberIds.includes(me.value.id)) channel.memberIds.push(me.value.id)
-    channel.lastActivity = Date.now()
-  }
-
-  function declineInvite(channel) {
-    channel.invitedIds = channel.invitedIds.filter((id) => id !== me.value.id)
-  }
 
   function updateChannel(channel, { name, type }) {
     if (channel.adminId !== me.value.id) return result(false, 'Only the admin can edit this channel')
@@ -329,18 +385,23 @@ export const useChatStore = defineStore('chat', () => {
     if (status !== 'offline') flushPending()
   }
 
-  function sendMessage(text) {
-    const mentions = (text.match(/@\w+/g) || []).map((t) => t.slice(1))
+  // The same message can come back twice: in the HTTP response and over the socket
+  function addMessage(message) {
+    if (messages.value.some((m) => m.id === message.id)) return false
+    messages.value.push(message)
+    return true
+  }
 
-    messages.value.push({
-      id: nextMessageId++,
-      channelId: activeId.value,
-      authorId: me.value.id,
-      text,
-      time: nowTime(),
-      mentions,
-    })
-    activeChannel.value.lastActivity = Date.now()
+  async function sendMessage(text) {
+    const channel = activeChannel.value
+    try {
+      const saved = await messageService.send(channel.id, text)
+      addMessage(messageFromServer(saved))
+      channel.lastActivity = Date.now()
+      return result(true, 'Sent')
+    } catch (err) {
+      return result(false, err.response?.data?.errors?.[0]?.message ?? 'Your quack didn’t reach the tub. Try again')
+    }
   }
 
   const notifyOnlyMentions = ref(false)
@@ -352,22 +413,20 @@ export const useChatStore = defineStore('chat', () => {
     return true
   }
 
-  function deliverMessage({ channelId, authorId, text, time }, { notify = true } = {}) {    const message = {
-      id: nextMessageId++,
-      channelId,
-      authorId,
-      text,
-      time: time ?? nowTime(),
-      mentions: (text.match(/@\w+/g) || []).map((t) => t.slice(1)),
-    }
-    messages.value.push(message)
+  function deliverMessage(message, { notify = true } = {}) {
+    if (!addMessage(message)) return
+    const { channelId, authorId } = message
+
+    // someone who registered after we loaded the user list
+    if (!users.value.some((u) => u.id === authorId)) loadUsers()
 
     const mentionsMe = !!me.value && message.mentions.includes(me.value.nickName)
+    const mine = authorId === me.value?.id
 
     const channel = channels.value.find((c) => c.id === channelId)
     if (channel) {
       channel.lastActivity = Date.now()
-      if (channelId !== activeId.value) {
+      if (channelId !== activeId.value && !mine) {
         channel.unread = (channel.unread ?? 0) + 1
         if (mentionsMe) channel.mentionCount = (channel.mentionCount ?? 0) + 1
       }
@@ -383,18 +442,30 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  function receiveMessage(payload) {
+  // While Drying Off (offline) incoming messages wait until the duck is back
+  function receiveMessage(message) {
     if (me.value?.status === 'offline') {
-      pending.value.push({ ...payload, time: nowTime() })
+      pending.value.push(message)
       return
     }
-    deliverMessage(payload)
+    deliverMessage(message)
   }
 
   function flushPending() {
     const queued = pending.value
     pending.value = []
-    queued.forEach((payload) => deliverMessage(payload, { notify: false }))
+    queued.forEach((message) => deliverMessage(message, { notify: false }))
+  }
+
+  // Development only: the server makes another member write to one of my channels.
+  // The message arrives over the socket like any other
+  async function simulateMessage(mention) {
+    try {
+      await messageService.simulate({ activeChannelId: activeId.value, mention })
+      return result(true, 'Quack incoming')
+    } catch (err) {
+      return result(false, err.response?.data?.errors?.[0]?.message ?? 'Could not simulate a message')
+    }
   }
 
   return {
@@ -407,13 +478,12 @@ export const useChatStore = defineStore('chat', () => {
     activeId,
     activeChannel,
     activeMessages,
+    activeHasMore,
     activeIsPublic,
     activeIsAdmin,
     canInviteToActive,
     setActive,
-    login,
-    register,
-    logout,
+    loadOlderMessages,
     acceptInvite,
     declineInvite,
     createChannel,
@@ -428,6 +498,7 @@ export const useChatStore = defineStore('chat', () => {
     setStatus,
     sendMessage,
     receiveMessage,
+    simulateMessage,
     notifyOnlyMentions,
   }
 })

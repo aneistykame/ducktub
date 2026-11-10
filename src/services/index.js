@@ -1,2 +1,5 @@
 export { default as authService } from './AuthService'
 export { default as channelService } from './ChannelService'
+export { default as messageService } from './MessageService'
+export { default as userService } from './UserService'
+export { socket, channelName } from './socket'
