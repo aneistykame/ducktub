@@ -10,6 +10,11 @@ export type ScannedRoutes = {
     'profile.session.destroy': { paramsTuple?: []; params?: {} }
     'channels.store': { paramsTuple?: []; params?: {} }
     'channels.index': { paramsTuple?: []; params?: {} }
+    'channels.discover': { paramsTuple?: []; params?: {} }
+    'channels.join': { paramsTuple?: []; params?: {} }
+    'channels.invite': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'channels.kick': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'channels.revoke': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'channels.leave': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'channels.accept': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'channels.decline': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -21,12 +26,14 @@ export type ScannedRoutes = {
   GET: {
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'channels.index': { paramsTuple?: []; params?: {} }
+    'channels.discover': { paramsTuple?: []; params?: {} }
     'messages.index': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'users.index': { paramsTuple?: []; params?: {} }
   }
   HEAD: {
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'channels.index': { paramsTuple?: []; params?: {} }
+    'channels.discover': { paramsTuple?: []; params?: {} }
     'messages.index': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'users.index': { paramsTuple?: []; params?: {} }
   }
@@ -35,6 +42,10 @@ export type ScannedRoutes = {
     'auth.session.store': { paramsTuple?: []; params?: {} }
     'profile.session.destroy': { paramsTuple?: []; params?: {} }
     'channels.store': { paramsTuple?: []; params?: {} }
+    'channels.join': { paramsTuple?: []; params?: {} }
+    'channels.invite': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'channels.kick': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'channels.revoke': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'channels.leave': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'channels.accept': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'channels.decline': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

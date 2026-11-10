@@ -97,7 +97,6 @@ function matches(list) {
 
 const groups = computed(() => {
   if (!query.value) return []
-  const myId = chat.me.id
 
   const mine = matches(chat.myChannels).map((c) => ({
     key: `mine-${c.id}`,
@@ -109,11 +108,8 @@ const groups = computed(() => {
     hint: c.id === chat.activeId ? 'Open' : '',
   }))
 
-  const publicOthers = matches(
-    chat.channels.filter(
-      (c) => c.type === 'public' && !c.memberIds.includes(myId) && !c.bannedIds.includes(myId),
-    ),
-  ).map((c) => ({
+  const myChannelIds = new Set(chat.myChannels.map((c) => c.id))
+  const publicOthers = matches(chat.publicChannels.filter((c) => !myChannelIds.has(c.id))).map((c) => ({
     key: `join-${c.id}`,
     kind: 'join',
     channel: c,
@@ -132,7 +128,14 @@ const groups = computed(() => {
 const options = computed(() => groups.value.flatMap((g) => g.options))
 const activeOption = computed(() => options.value[highlighted.value] ?? null)
 
-watch(query, () => (highlighted.value = 0))
+const SEARCH_DELAY_MS = 200
+let searchTimer = null
+
+watch(query, (q) => {
+  highlighted.value = 0
+  clearTimeout(searchTimer)
+  if (q) searchTimer = setTimeout(() => chat.discoverChannels(q), SEARCH_DELAY_MS)
+})
 
 function onInput(e) {
   emit('update:modelValue', e.target.value)
@@ -150,7 +153,7 @@ function clear() {
 function pick(option) {
   if (!option) return
   if (option.kind === 'open') chat.setActive(option.channel.id)
-  else show(chat.joinChannel(option.name))
+  else chat.joinChannel(option.name).then(show)
   clear()
   inputEl.value?.blur()
   emit('picked')
@@ -165,7 +168,10 @@ function onShortcut(e) {
 }
 
 onMounted(() => window.addEventListener('keydown', onShortcut))
-onBeforeUnmount(() => window.removeEventListener('keydown', onShortcut))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onShortcut)
+  clearTimeout(searchTimer)
+})
 </script>
 
 <style lang="scss" scoped>

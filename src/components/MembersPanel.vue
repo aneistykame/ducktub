@@ -100,6 +100,7 @@ import UserAvatar from './UserAvatar.vue'
 import InviteDialog from './InviteDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
 import Pond from './Pond.vue'
+import { useCommands } from '../composables/useCommands'
 
 const props = defineProps({
   closable: Boolean,
@@ -138,8 +139,11 @@ const kicksOf = (u) => (channel.value.kickedBy[u.id] ?? []).length
 const kicksText = (u) =>
   `${kicksOf(u)} of ${KICKS_TO_BAN} members have kicked ${u.nickName} out of this channel. At ${KICKS_TO_BAN} the ban is permanent.`
 
-function invite(user) {
-  chat.inviteToActive(user)
+const { show } = useCommands()
+
+async function invite(user) {
+  const res = await chat.inviteToActive(user)
+  if (!res.ok) show(res)
 }
 
 function onInviteClick() {

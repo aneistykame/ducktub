@@ -39,6 +39,11 @@ router
       .group(() => {
         router.post('/', [controllers.Channels, 'store'])
         router.get('/', [controllers.Channels, 'index'])
+        router.get('/discover', [controllers.Channels, 'discover'])
+        router.post('/join', [controllers.Channels, 'join'])
+        router.post('/:id/invite', [controllers.Channels, 'invite'])
+        router.post('/:id/kick', [controllers.Channels, 'kick'])
+        router.post('/:id/revoke', [controllers.Channels, 'revoke'])
         router.post('/:id/leave', [controllers.Channels, 'leave'])
         router.post('/:id/accept', [controllers.Channels, 'accept'])
         router.post('/:id/decline', [controllers.Channels, 'decline'])

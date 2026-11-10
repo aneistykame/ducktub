@@ -31,7 +31,7 @@ export function useCommands() {
     const command = raw.toLowerCase()
 
     if (command === 'join') {
-      show(chat.joinChannel(args[0] ?? '', args[1]?.toLowerCase() === 'private'))
+      chat.joinChannel(args[0] ?? '', args[1]?.toLowerCase() === 'private').then(show)
     } else if (command === 'cancel') {
       if (chat.activeChannel) {
         leaveTarget.value = chat.activeChannel
@@ -49,8 +49,14 @@ export function useCommands() {
           leaveOpen.value = true
         }
       } else if (command === 'invite') {
-      if (chat.activeChannel) show(chat.inviteByNick(args[0] ?? ''))
+      if (chat.activeChannel) chat.inviteByNick(args[0] ?? '').then(show)
       else say(false, 'Open a channel first, then /invite nickName')
+    } else if (command === 'kick') {
+      if (chat.activeChannel) chat.kickByNick(args[0] ?? '').then(show)
+      else say(false, 'Open a channel first, then /kick nickName')
+    } else if (command === 'revoke') {
+      if (chat.activeChannel) chat.revokeByNick(args[0] ?? '').then(show)
+      else say(false, 'Open a channel first, then /revoke nickName')
     } else {
       say(false, `Unknown command /${raw}`)
     }

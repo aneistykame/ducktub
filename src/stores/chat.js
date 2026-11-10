@@ -20,6 +20,8 @@ const messageFromServer = (m) => ({
   mentions: mentionsIn(m.content),
 })
 
+const errorOf = (err, fallback) => err.response?.data?.errors?.[0]?.message ?? fallback
+
 const result = (ok, before, channel = null, after = '') => ({
   ok,
   before,
@@ -42,6 +44,7 @@ export const useChatStore = defineStore('chat', () => {
   const hasMoreById = ref({})
   const activeId = ref(null)
   const pending = ref([])
+  const publicChannels = ref([])
 
   const myChannels = computed(() =>
     me.value
@@ -120,12 +123,41 @@ export const useChatStore = defineStore('chat', () => {
     const channel = socket.channel(channelName(channelId))
     subscriptions.set(channelId, channel)
     channel.listen('message:new', (payload) => receiveMessage(messageFromServer(payload)))
+    channel.listen('channel:state', applyState)
     try {
       await connecting
       await channel.subscribe()
     } catch {
       subscriptions.delete(channelId)
     }
+  }
+
+  function subscribeUser() {
+    const channel = socket.channel(`users/${me.value.id}`)
+    channel.listen('invitation:new', () => loadChannels({ keepActive: true }))
+    channel.listen('channel:removed', ({ channelId }) => dropChannel(channelId))
+    connecting.then(() => channel.subscribe()).catch(() => {})
+  }
+
+  function applyState({ channelId, memberIds, invitedIds, bannedIds, kickedBy }) {
+    const channel = channels.value.find((c) => c.id === channelId)
+    if (!channel) return
+    Object.assign(channel, { memberIds, invitedIds, bannedIds, kickedBy })
+    if (memberIds.some((id) => !users.value.some((u) => u.id === id))) loadUsers()
+  }
+
+  function upsertChannel(c) {
+    const fresh = channelFromServer(c)
+    const i = channels.value.findIndex((x) => x.id === fresh.id)
+    if (i === -1) channels.value.unshift(fresh)
+    else channels.value[i] = { ...channels.value[i], ...fresh, unread: channels.value[i].unread }
+  }
+
+  function dropChannel(channelId) {
+    channels.value = channels.value.filter((c) => c.id !== channelId)
+    messages.value = messages.value.filter((m) => m.channelId !== channelId)
+    loadedChannelIds.delete(channelId)
+    if (activeId.value === channelId) openFirstChannel()
   }
 
   function unsubscribe(channelId) {
@@ -144,6 +176,7 @@ export const useChatStore = defineStore('chat', () => {
 
   function connectSocket() {
     connecting = socket.connect().catch((err) => console.warn('Socket connection failed', err))
+    subscribeUser()
     myChannels.value.forEach((c) => subscribe(c.id))
   }
 
@@ -169,20 +202,33 @@ export const useChatStore = defineStore('chat', () => {
       lastActivity: c.lastActivityAt ? new Date(c.lastActivityAt).getTime() : 0,
       unread: 0,
       mentionCount: 0,
-      memberIds: invited ? [] : [me.value.id],
-      invitedIds: invited ? [me.value.id] : [],
-      bannedIds: [],
-      kickedBy: {},
+      memberIds: c.memberIds ?? (invited ? [] : [me.value.id]),
+      invitedIds: c.invitedIds ?? (invited ? [me.value.id] : []),
+      bannedIds: c.bannedIds ?? [],
+      kickedBy: c.kickedBy ?? {},
     }
   }
 
-  async function loadChannels() {
+  async function loadChannels({ keepActive = false } = {}) {
     const { channels: mine, invitations } = await channelService.list()
+    const previous = new Map(channels.value.map((c) => [c.id, c]))
     channels.value = [
       ...mine.map((c) => channelFromServer(c)),
       ...invitations.map((c) => channelFromServer(c, { invited: true })),
-    ]
-    openFirstChannel()
+    ].map((c) => ({
+      ...c,
+      unread: previous.get(c.id)?.unread ?? 0,
+      mentionCount: previous.get(c.id)?.mentionCount ?? 0,
+    }))
+    if (!keepActive || !myChannels.value.some((c) => c.id === activeId.value)) openFirstChannel()
+  }
+
+  async function discoverChannels(q) {
+    try {
+      publicChannels.value = await channelService.discover(q)
+    } catch {
+      publicChannels.value = []
+    }
   }
 
   watch(
@@ -198,6 +244,7 @@ export const useChatStore = defineStore('chat', () => {
         channels.value = []
         messages.value = []
         pending.value = []
+        publicChannels.value = []
         loadedChannelIds.clear()
         hasMoreById.value = {}
         activeId.value = null
@@ -222,11 +269,11 @@ export const useChatStore = defineStore('chat', () => {
   async function createChannel({ name, type }) {
     try {
       const created = await channelService.create({ name, type })
-      channels.value.unshift(channelFromServer(created))
+      upsertChannel(created)
       setActive(created.id)
       return result(true, 'Created ', name)
     } catch (err) {
-      return result(false, err.response?.data?.errors?.[0]?.message ?? 'Could not create the channel')
+      return result(false, errorOf(err, 'Could not create the channel'))
     }
   }
 
@@ -234,10 +281,7 @@ export const useChatStore = defineStore('chat', () => {
   async function leaveChannel(channel) {
     try {
       const { deleted } = await channelService.leave(channel.id)
-      channels.value = channels.value.filter((c) => c.id !== channel.id)
-      if (deleted) messages.value = messages.value.filter((m) => m.channelId !== channel.id)
-
-      if (activeId.value === channel.id) openFirstChannel()
+      dropChannel(channel.id)
       return result(true, deleted ? 'Deleted ' : 'Left ', channel.name)
     } catch {
       return result(false, 'Could not leave the channel')
@@ -245,27 +289,16 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function inviteToActive(user) {
-    const channel = activeChannel.value
-    if (!channel || !canInviteToActive.value) return
-    if (channel.memberIds.includes(user.id)) return
-
-    if (channel.bannedIds.includes(user.id)) {
-      if (!activeIsAdmin.value) return
-      channel.bannedIds = channel.bannedIds.filter((id) => id !== user.id)
-      delete channel.kickedBy[user.id]
-    }
-
-    if (!channel.invitedIds.includes(user.id)) channel.invitedIds.push(user.id)
+    return inviteByNick(user.nickName)
   }
 
   async function acceptInvite(channel) {
     try {
-      await channelService.accept(channel.id)
-      channel.invitedIds = []
-      channel.memberIds = [me.value.id]
-      channel.lastActivity = Date.now()
+      const joined = await channelService.accept(channel.id)
+      upsertChannel({ ...joined, lastActivityAt: new Date().toISOString() })
     } catch {
       // the invitation is no longer valid
+      dropChannel(channel.id)
     }
   }
 
@@ -278,39 +311,29 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  const nickOf = (name) =>
+    users.value.find((u) => u.nickName.toLowerCase() === name.toLowerCase())?.nickName ?? name
+
   // Results keep the channel name separate so the UI can shorten it
-  function inviteByNick(nick) {
+  async function inviteByNick(nick) {
     const channel = activeChannel.value
-    const say = (ok, before, inChannel = false, after = '') => ({
-      ok,
-      before,
-      channel: inChannel ? channel.name : null,
-      after,
-      message: inChannel ? `${before}#${channel.name}${after}` : before,
-    })
-
     const name = nick.replace(/^@/, '')
-    if (!name) return say(false, 'Usage: /invite nickName')
+    if (!channel) return result(false, 'Open a channel first, then /invite nickName')
+    if (!name) return result(false, 'Usage: /invite nickName')
 
-    const user = users.value.find((u) => u.nickName.toLowerCase() === name.toLowerCase())
-    if (!user) return say(false, `No duck called @${name}`)
-    if (user.id === me.value.id) return say(false, 'You’re already in this tub')
-    if (channel.memberIds.includes(user.id)) return say(false, `@${user.nickName} is already in `, true)
-    if (!canInviteToActive.value) return say(false, 'Only the admin can invite people to this private channel')
-
-    const wasBanned = channel.bannedIds.includes(user.id)
-    if (wasBanned && !activeIsAdmin.value) {
-      return say(false, `@${user.nickName} is banned here. Only the admin can let them back in`)
+    try {
+      const { liftedBan, state } = await channelService.invite(channel.id, name)
+      applyState({ channelId: channel.id, ...state })
+      return liftedBan
+        ? result(true, `Lifted the ban and invited @${nickOf(name)} to `, channel.name)
+        : result(true, `Invited @${nickOf(name)} to `, channel.name, '. Quack!')
+    } catch (err) {
+      return result(false, errorOf(err, 'Could not send the invite'))
     }
-    if (channel.invitedIds.includes(user.id)) return say(false, `@${user.nickName} is already invited`)
-
-    inviteToActive(user)
-    return wasBanned
-      ? say(true, `Lifted the ban and invited @${user.nickName} to `, true)
-      : say(true, `Invited @${user.nickName} to `, true, '. Quack!')
   }
 
-  function joinChannel(rawName, isPrivate = false) {
+  // Creates the channel if it doesn't exist, otherwise joins it (public, or private with an invite)
+  async function joinChannel(rawName, isPrivate = false) {
     const name = rawName.replace(/^#/, '')
     if (!name) return result(false, 'Usage: /join channelName [private]')
     if (!/^[\w-]+$/.test(name)) return result(false, 'Channel names use only letters, numbers, - and _')
@@ -318,29 +341,21 @@ export const useChatStore = defineStore('chat', () => {
       return result(false, `Channel names can be at most ${CHANNEL_NAME_MAX} characters`)
     }
 
-    const channel = channels.value.find((c) => c.name.toLowerCase() === name.toLowerCase())
-    if (!channel) {
-      createChannel({ name, type: isPrivate ? 'private' : 'public' })
-      return result(true, isPrivate ? 'Created the secret tub ' : 'Created ', name, '. Quack!')
-    }
-
-    const myId = me.value.id
-    if (channel.memberIds.includes(myId)) {
+    try {
+      const { status, channel } = await channelService.join({
+        name,
+        type: isPrivate ? 'private' : 'public',
+      })
+      upsertChannel(channel)
       setActive(channel.id)
-      return result(true, 'You’re already in ', channel.name)
-    }
-    if (channel.bannedIds.includes(myId)) return result(false, 'You’re banned from ', channel.name)
+      publicChannels.value = publicChannels.value.filter((c) => c.id !== channel.id)
 
-    const invited = channel.invitedIds.includes(myId)
-    if (channel.type === 'private' && !invited) {
-      return result(false, '', channel.name, ' is private. Ask the admin for an invite')
+      if (status === 'already') return result(true, 'You’re already in ', channel.name)
+      if (status === 'joined') return result(true, 'Joined ', channel.name, '. Quack!')
+      return result(true, channel.type === 'private' ? 'Created the secret tub ' : 'Created ', channel.name, '. Quack!')
+    } catch (err) {
+      return result(false, errorOf(err, 'Could not join the tub'))
     }
-
-    channel.invitedIds = channel.invitedIds.filter((id) => id !== myId)
-    channel.memberIds.push(myId)
-    channel.lastActivity = Date.now()
-    setActive(channel.id)
-    return result(true, 'Joined ', channel.name, '. Quack!')
   }
 
   function canKick(userId) {
@@ -348,11 +363,6 @@ export const useChatStore = defineStore('chat', () => {
     if (!channel || !channel.memberIds.includes(userId)) return false
     if (userId === me.value.id || userId === channel.adminId) return false
     return activeIsPublic.value || activeIsAdmin.value
-  }
-
-  function banFromActive(userId) {
-    const channel = activeChannel.value
-    if (!channel.bannedIds.includes(userId)) channel.bannedIds.push(userId)
   }
 
   function kickPreview(userId) {
@@ -366,18 +376,46 @@ export const useChatStore = defineStore('chat', () => {
     return { action: 'kick', kicks, next, counted, bans: next >= KICKS_TO_BAN }
   }
 
-  function kickFromActive(userId) {
-    if (!canKick(userId)) return
+  // In a private channel the admin's kick only removes; in a public one it is a vote or, from the admin, a ban
+  async function kickByNick(nick) {
     const channel = activeChannel.value
-    const { action, bans } = kickPreview(userId)
+    const name = nick.replace(/^@/, '')
+    if (!channel) return result(false, 'Open a channel first, then /kick nickName')
+    if (!name) return result(false, 'Usage: /kick nickName')
 
-    channel.memberIds = channel.memberIds.filter((id) => id !== userId)
-
-    if (action === 'kick') {
-      const kickers = channel.kickedBy[userId] ?? []
-      if (!kickers.includes(me.value.id)) channel.kickedBy[userId] = [...kickers, me.value.id]
+    try {
+      const { action, kicks, state } = await channelService.kick(channel.id, name)
+      applyState({ channelId: channel.id, ...state })
+      const who = `@${nickOf(name)}`
+      if (action === 'banned') return result(true, `Banned ${who} from `, channel.name)
+      if (action === 'removed') return result(true, `Removed ${who} from `, channel.name)
+      return result(true, `Kicked ${who} out of `, channel.name, ` (${kicks} of ${KICKS_TO_BAN})`)
+    } catch (err) {
+      return result(false, errorOf(err, 'Could not kick'))
     }
-    if (bans) banFromActive(userId)
+  }
+
+  function kickFromActive(userId) {
+    const user = users.value.find((u) => u.id === userId)
+    return kickByNick(user?.nickName ?? '')
+  }
+
+  // Admin only: remove a member or cancel a pending invitation, without a ban
+  async function revokeByNick(nick) {
+    const channel = activeChannel.value
+    const name = nick.replace(/^@/, '')
+    if (!channel) return result(false, 'Open a channel first, then /revoke nickName')
+    if (!name) return result(false, 'Usage: /revoke nickName')
+
+    try {
+      const { action, state } = await channelService.revoke(channel.id, name)
+      applyState({ channelId: channel.id, ...state })
+      return action === 'uninvited'
+        ? result(true, `Cancelled the invite for @${nickOf(name)} to `, channel.name)
+        : result(true, `Removed @${nickOf(name)} from `, channel.name)
+    } catch (err) {
+      return result(false, errorOf(err, 'Could not revoke access'))
+    }
   }
 
   function setStatus(status) {
@@ -400,7 +438,7 @@ export const useChatStore = defineStore('chat', () => {
       channel.lastActivity = Date.now()
       return result(true, 'Sent')
     } catch (err) {
-      return result(false, err.response?.data?.errors?.[0]?.message ?? 'Your quack didn’t reach the tub. Try again')
+      return result(false, errorOf(err, 'Your quack didn’t reach the tub. Try again'))
     }
   }
 
@@ -464,7 +502,7 @@ export const useChatStore = defineStore('chat', () => {
       await messageService.simulate({ activeChannelId: activeId.value, mention })
       return result(true, 'Quack incoming')
     } catch (err) {
-      return result(false, err.response?.data?.errors?.[0]?.message ?? 'Could not simulate a message')
+      return result(false, errorOf(err, 'Could not simulate a message'))
     }
   }
 
@@ -491,6 +529,10 @@ export const useChatStore = defineStore('chat', () => {
     inviteToActive,
     inviteByNick,
     joinChannel,
+    publicChannels,
+    discoverChannels,
+    kickByNick,
+    revokeByNick,
     updateChannel,
     canKick,
     kickPreview,

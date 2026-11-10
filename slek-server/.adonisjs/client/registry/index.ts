@@ -44,6 +44,36 @@ const routes = {
     tokens: [[0,"api"],[0,"v1"],[0,"channels"]],
     types: placeholder as Registry['channels.index']['types'],
   },
+  'channels.discover': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/channels/discover',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[0,"discover"]],
+    types: placeholder as Registry['channels.discover']['types'],
+  },
+  'channels.join': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/join',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[0,"join"]],
+    types: placeholder as Registry['channels.join']['types'],
+  },
+  'channels.invite': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/invite',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"invite"]],
+    types: placeholder as Registry['channels.invite']['types'],
+  },
+  'channels.kick': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/kick',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"kick"]],
+    types: placeholder as Registry['channels.kick']['types'],
+  },
+  'channels.revoke': {
+    methods: ["POST"],
+    pattern: '/api/v1/channels/:id/revoke',
+    tokens: [[0,"api"],[0,"v1"],[0,"channels"],[1,"id"],[0,"revoke"]],
+    types: placeholder as Registry['channels.revoke']['types'],
+  },
   'channels.leave': {
     methods: ["POST"],
     pattern: '/api/v1/channels/:id/leave',

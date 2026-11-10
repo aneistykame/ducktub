@@ -1,6 +1,6 @@
 import { BaseChannel, SocketResponseError } from '@rlanz/socket'
 import type { MiddlewareContext } from '@rlanz/socket/types'
-import Channel from '#models/channel'
+import Channel, { type ChannelState } from '#models/channel'
 import type User from '#models/user'
 
 export type MessagePayload = {
@@ -11,8 +11,13 @@ export type MessagePayload = {
   createdAt: string | null
 }
 
+export type StatePayload = ChannelState & {
+  channelId: number
+}
+
 type ServerEvents = {
   'message:new': MessagePayload
+  'channel:state': StatePayload
 }
 
 async function ensureMember(ctx: MiddlewareContext<User>, next: () => Promise<void>) {

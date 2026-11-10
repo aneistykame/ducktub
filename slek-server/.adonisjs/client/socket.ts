@@ -18,6 +18,22 @@ export interface AppSocket {
 
     }
 
+    readonly 'users/:userId': {
+
+      readonly params: {
+
+        readonly 'userId': string | number
+
+      }
+
+      readonly channel: typeof import('#channels/user_channel').default
+
+      readonly handlers: {
+
+      }
+
+    }
+
   }
 
 }

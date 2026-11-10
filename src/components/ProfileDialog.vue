@@ -117,6 +117,7 @@ import UserAvatar from './UserAvatar.vue'
 import StatusPicker from './StatusPicker.vue'
 import ChannelName from './ChannelName.vue'
 import { useAuthStore } from '../stores/auth'
+import { useCommands } from '../composables/useCommands'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -128,6 +129,7 @@ const chat = useChatStore()
 const isMe = computed(() => !!chat.me && props.user?.id === chat.me.id)
 
 const auth = useAuthStore()
+const { show } = useCommands()
 
 const statusLabel = { online: 'Floating', dnd: 'Do Not Splash', offline: 'Drying Off' }
 
@@ -202,14 +204,16 @@ function close() {
   emit('update:modelValue', false)
 }
 
-function doKick() {
-  chat.kickFromActive(props.user.id)
+async function doKick() {
+  const userId = props.user.id
   close()
+  show(await chat.kickFromActive(userId))
 }
 
-function restore() {
-  chat.inviteToActive(props.user)
+async function restore() {
+  const user = props.user
   close()
+  show(await chat.inviteToActive(user))
 }
 
 async function logout() {
