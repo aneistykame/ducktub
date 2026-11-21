@@ -1,6 +1,7 @@
 import { BaseChannel, SocketResponseError } from '@rlanz/socket'
 import type { MiddlewareContext } from '@rlanz/socket/types'
 import type User from '#models/user'
+import { trackSocket } from '#services/user_sockets'
 
 export type RemovedReason = 'kicked' | 'banned' | 'revoked' | 'deleted'
 
@@ -14,6 +15,7 @@ async function ensureSelf(ctx: MiddlewareContext<User>, next: () => Promise<void
   if (String(user.id) !== ctx.params.userId) {
     throw new SocketResponseError('You can only listen to your own events')
   }
+  await trackSocket(ctx.socket)
   await next()
 }
 

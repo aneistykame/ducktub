@@ -102,6 +102,7 @@ Channels with no activity for 30 days are deleted automatically the next time so
 | `no such table` errors | Run `node ace migration:fresh --seed` in `slek-server`. |
 | Network errors in the browser console | The backend isn't running. Start it with `npm run dev` in `slek-server`. |
 | Port 3333 or 9000 already in use | Stop the other process, or change `PORT` in `.env` and set `API_URL` to match. |
+| Messages take about 2 seconds to send in Firefox (the browser dev tools show a long `Connecting` time, usually on Windows) | In `slek-server/.env` set `HOST=::` and write `APP_URL=http://localhost:${PORT}`, then restart the backend. This makes the backend reachable from other devices on your network, so use it only on a network you trust. |
 
 ## Other commands
 

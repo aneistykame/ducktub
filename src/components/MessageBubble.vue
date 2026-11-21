@@ -70,16 +70,16 @@ const colorClass = computed(() => 'c' + (props.author.id % 6))
 const chat = useChatStore()
 const findUser = (nick) => chat.users.find((u) => u.nickName.toLowerCase() === nick.toLowerCase())
 
-const parts = computed(() =>
-  props.message.text
+const parts = computed(() => {
+  return props.message.text
     .split(/(@\w+)/)
     .filter(Boolean)
     .map((t) => {
-      const tag = t.startsWith('@')
-      const user = tag ? findUser(t.slice(1)) : null
-      return { text: t, tag, user }
-    }),
-)
+      const user = t.startsWith('@') ? findUser(t.slice(1)) : null
+      const isMember = !!user && chat.isMember(props.message.channelId, user.id)
+      return { text: t, tag: isMember, user: isMember ? user : null }
+    })
+})
 </script>
 
 <style lang="scss" scoped>
@@ -169,6 +169,10 @@ $avatar-colors: #7fd3f0, #ffd84d, #f4a6bc, #b8e986, #c9a7f5, #ffb27a;
 .bubble.mention {
   background: $bubbles-mention;
   border-color: $secondary;
+}
+
+.bubble.mine.mention {
+  color: $text-light;
 }
 
 .tag {

@@ -25,7 +25,10 @@ export default class Message extends MessageSchema {
 
     const nicks = [...content.matchAll(/@([\w-]+)/g)].map((m) => m[1]);
     if (nicks.length) {
-      const mentioned = await User.query().whereIn("nick_name", nicks).select("id");
+      const mentioned = await User.query()
+        .whereIn("nick_name", nicks)
+        .whereIn("id", (q) => q.from("channel_members").select("user_id").where("channel_id", channel.id))
+        .select("id");
       await message.related("mentions").sync(mentioned.map((u) => u.id));
     }
 

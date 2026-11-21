@@ -5,6 +5,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import ChannelTransformer from '#transformers/channel_transformer'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import { disconnectUser } from '#services/user_sockets'
 
 const KICKS_TO_BAN = 3
 
@@ -240,6 +241,7 @@ export default class ChannelsController {
       reason: action === 'removed' ? 'revoked' : action,
     })
     const state = await channel.broadcastState()
+    await disconnectUser(target.id)
 
     return serialize({ action, kicks, state })
   }
@@ -274,6 +276,7 @@ export default class ChannelsController {
 
     await Channel.notifyUser(target.id, 'channel:removed', { channelId: channel.id, reason: 'revoked' })
     const state = await channel.broadcastState()
+    await disconnectUser(target.id)
 
     return serialize({ action, state })
   }

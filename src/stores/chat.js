@@ -495,6 +495,10 @@ export const useChatStore = defineStore('chat', () => {
     queued.forEach((message) => deliverMessage(message, { notify: false }))
   }
 
+  function isMember(channelId, userId) {
+    return !!channels.value.find((c) => c.id === channelId)?.memberIds.includes(userId)
+  }
+
   // Development only: the server makes another member write to one of my channels.
   // The message arrives over the socket like any other
   async function simulateMessage(mention) {
@@ -542,5 +546,6 @@ export const useChatStore = defineStore('chat', () => {
     receiveMessage,
     simulateMessage,
     notifyOnlyMentions,
+    isMember,
   }
 })
