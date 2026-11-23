@@ -32,11 +32,11 @@
       />
     </div>
 
-    <TypingIndicator v-if="typing" :nick="typing.nick" :draft="typing.draft" />
+    <TypingIndicator v-if="typers.length" :typers="typers" :channel-id="chat.activeId" />
 
     <CommandToast :feedback="feedback" />
 
-    <CommandBar @submit="onSubmit" />
+    <CommandBar @submit="onSubmit" @typing="onTyping" />
 
     <ProfileDialog v-model="profileOpen" :user="profileUser" />
 
@@ -70,19 +70,25 @@ const emit = defineEmits(['toggle-members'])
 
 const chat = useChatStore()
 
-const typingByChannel = {
-  1: { nick: 'ed', draft: 'I can bring dess' },
+const typers = computed(() => chat.activeTyping)
+
+// Commands and blank text are not drafts of a message, so nobody sees them
+const publicDraft = (text) => (text.trim() && !text.trimStart().startsWith('/') ? text : '')
+
+let draftText = ''
+
+function onTyping(text) {
+  draftText = text
+  chat.sendTyping(chat.activeId, publicDraft(text))
 }
 
-const typing = computed(() => {
-  const t = typingByChannel[chat.activeId]
-  if (!t) return null
-
-  const user = chat.users.find((u) => u.nickName === t.nick)
-  if (!user || user.id === chat.me.id) return null
-
-  return chat.activeChannel.memberIds.includes(user.id) ? t : null
-})
+watch(
+  () => chat.activeId,
+  (id, oldId) => {
+    chat.sendTyping(oldId, '')
+    chat.sendTyping(id, publicDraft(draftText))
+  },
+)
 
 const messagesEl = ref(null)
 
@@ -162,6 +168,13 @@ function simulate(withMention) {
 }
 
 onMounted(scrollToEnd)
+
+watch(
+  () => typers.value.length > 0,
+  () => {
+    if (nearBottom()) scrollToEnd()
+  },
+)
 
 watch(
   () => chat.activeId,

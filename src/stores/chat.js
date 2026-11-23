@@ -124,6 +124,7 @@ export const useChatStore = defineStore('chat', () => {
     subscriptions.set(channelId, channel)
     channel.listen('message:new', (payload) => receiveMessage(messageFromServer(payload)))
     channel.listen('channel:state', applyState)
+    channel.listen('typing:update', receiveTyping)
     try {
       await connecting
       await channel.subscribe()
@@ -157,6 +158,7 @@ export const useChatStore = defineStore('chat', () => {
     channels.value = channels.value.filter((c) => c.id !== channelId)
     messages.value = messages.value.filter((m) => m.channelId !== channelId)
     loadedChannelIds.delete(channelId)
+    resetTyping(channelId)
     if (activeId.value === channelId) openFirstChannel()
   }
 
@@ -184,6 +186,7 @@ export const useChatStore = defineStore('chat', () => {
     if (!connecting) return
     connecting = null
     subscriptions.clear()
+    resetTyping()
     socket.disconnect()
   }
 
@@ -442,6 +445,99 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  const TYPING_THROTTLE = 150
+  const TYPING_TTL = 6000
+
+  const typingByChannel = ref({})
+  const typingTimers = new Map()
+  const typingQueue = new Map()
+  let typingFlushTimer = null
+  let typingSentAt = 0
+
+  const activeTyping = computed(() => {
+    const memberIds = activeChannel.value?.memberIds ?? []
+    return (typingByChannel.value[activeId.value] ?? [])
+      .filter((t) => memberIds.includes(t.userId))
+      .map((t) => ({ ...t, nick: users.value.find((u) => u.id === t.userId)?.nickName }))
+      .filter((t) => t.nick)
+  })
+
+  const typingKey = (channelId, userId) => `${channelId}:${userId}`
+
+  function setTyping(channelId, userId, draft) {
+    const list = typingByChannel.value[channelId] ?? []
+    const known = list.some((t) => t.userId === userId)
+    typingByChannel.value = {
+      ...typingByChannel.value,
+      [channelId]: known
+        ? list.map((t) => (t.userId === userId ? { ...t, draft } : t))
+        : [...list, { userId, draft }],
+    }
+
+    const key = typingKey(channelId, userId)
+    clearTimeout(typingTimers.get(key))
+    typingTimers.set(key, setTimeout(() => clearTyping(channelId, userId), TYPING_TTL))
+  }
+
+  function clearTyping(channelId, userId) {
+    const key = typingKey(channelId, userId)
+    clearTimeout(typingTimers.get(key))
+    typingTimers.delete(key)
+
+    const list = typingByChannel.value[channelId]
+    if (!list?.some((t) => t.userId === userId)) return
+    typingByChannel.value = {
+      ...typingByChannel.value,
+      [channelId]: list.filter((t) => t.userId !== userId),
+    }
+  }
+
+  function resetTyping(channelId) {
+    for (const [key, timer] of typingTimers) {
+      if (channelId === undefined || key.startsWith(`${channelId}:`)) {
+        clearTimeout(timer)
+        typingTimers.delete(key)
+      }
+    }
+    if (channelId === undefined) {
+      typingByChannel.value = {}
+    } else {
+      const rest = { ...typingByChannel.value }
+      delete rest[channelId]
+      typingByChannel.value = rest
+    }
+  }
+
+  function receiveTyping({ channelId, userId, draft }) {
+    if (userId === me.value?.id) return // my other tab
+
+    if (!draft?.trim()) return clearTyping(channelId, userId)
+
+    setTyping(channelId, userId, draft)
+    if (!users.value.some((u) => u.id === userId)) loadUsers()
+  }
+
+  function sendTyping(channelId, draft) {
+    if (!channelId || !connecting) return
+
+    typingQueue.set(channelId, draft)
+    if (typingFlushTimer) return
+    const wait = Math.max(0, TYPING_THROTTLE - (Date.now() - typingSentAt))
+    typingFlushTimer = setTimeout(flushTyping, wait)
+  }
+
+  function flushTyping() {
+    typingFlushTimer = null
+    typingSentAt = Date.now()
+    for (const [channelId, draft] of typingQueue) {
+      try {
+        subscriptions.get(channelId)?.send('typing:update', { draft })
+      } catch {
+      }
+    }
+    typingQueue.clear()
+  }
+
   const notifyOnlyMentions = ref(false)
 
   function shouldNotify(message) {
@@ -482,6 +578,8 @@ export const useChatStore = defineStore('chat', () => {
 
   // While Drying Off (offline) incoming messages wait until the duck is back
   function receiveMessage(message) {
+    // the message is out, so its author is no longer writing it
+    clearTyping(message.channelId, message.authorId)
     if (me.value?.status === 'offline') {
       pending.value.push(message)
       return
@@ -547,5 +645,7 @@ export const useChatStore = defineStore('chat', () => {
     simulateMessage,
     notifyOnlyMentions,
     isMember,
+    activeTyping,
+    sendTyping,
   }
 })

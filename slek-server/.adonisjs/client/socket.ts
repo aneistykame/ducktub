@@ -14,6 +14,8 @@ export interface AppSocket {
 
       readonly handlers: {
 
+        readonly 'typing:update': 'typing'
+
       }
 
     }

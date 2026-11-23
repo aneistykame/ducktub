@@ -17,12 +17,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'typing'])
 
 const text = ref('')
 const inputEl = ref(null)
+
+watch(text, (value) => emit('typing', value))
 
 function resize() {
   const el = inputEl.value
