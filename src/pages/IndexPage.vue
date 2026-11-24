@@ -50,7 +50,7 @@ import { useChatStore } from '../stores/chat'
 const $q = useQuasar()
 const chat = useChatStore()
 
-const { feedback, run, say } = useCommands()
+const { feedback, run, say, showMembers } = useCommands()
 
 function onEmptySubmit(text) {
   if (!run(text)) say(false, 'Join a tub first. Try /join channelName')
@@ -70,7 +70,7 @@ const mode = computed(() => {
 
 const panelWidth = computed(() => ($q.screen.width >= WIDE_FROM ? WIDE_WIDTH : WIDTH))
 
-const showMembers = ref(mode.value === 'fixed')
+showMembers.value = mode.value === 'fixed'
 
 watch(mode, (m) => {
   showMembers.value = m === 'fixed'

@@ -11,6 +11,8 @@ let timer = null
 const leaveOpen = ref(false)
 const leaveTarget = ref(null)
 
+const showMembers = ref(false)
+
 export function useCommands() {
   const chat = useChatStore()
 
@@ -57,11 +59,15 @@ export function useCommands() {
     } else if (command === 'revoke') {
       if (chat.activeChannel) chat.revokeByNick(args[0] ?? '').then(show)
       else say(false, 'Open a channel first, then /revoke nickName')
+    } else if (command === 'list') {
+      if (!chat.activeChannel) say(false, 'Open a channel first, then /list')
+      else if (showMembers.value) say(true, 'The member list is already shown')
+      else showMembers.value = true
     } else {
       say(false, `Unknown command /${raw}`)
     }
     return true
   }
 
-  return { feedback, show, say, run, leaveOpen, leaveTarget }
+  return { feedback, show, say, run, leaveOpen, leaveTarget, showMembers }
 }
